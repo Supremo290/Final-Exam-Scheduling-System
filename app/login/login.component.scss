@@ -1,0 +1,53 @@
+.login-form {
+  md-card {
+    padding: 0!important;
+
+    md-card-title {
+      background-color: blue;
+    }
+  }
+}
+/*
+Login template using Angular Material
+@author Shashank Tiwari
+*/
+ 
+.login-container{
+  margin: 0 auto;
+  width: 300px;
+  background-color: #fff;
+}
+.login-container2{
+  width: 100%;
+  background-color: #fff;
+}
+ 
+.login-box-header{
+	width: auto;
+    background: #294a70;
+    text-align: center;
+    vertical-align: middle;
+    padding: 2%;
+    color: #fff;
+}
+ 
+.login-box-body{
+	width: auto;
+}
+ 
+.login-icon{
+	margin-top: -2px;
+}
+ 
+.justifier {
+	width: 100%;
+	padding-bottom: 2%;
+}
+ 
+.login-button{
+	width: 100%;
+	padding:1.5% !important;	
+	    background: #ffab1f;
+    font-size: 1.5em;
+    color: #fff !important;
+}

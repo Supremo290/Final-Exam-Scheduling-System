@@ -1,0 +1,189 @@
+<div class="final-output-container">
+  <div class="header-section">
+    <h2 style="color: #0D47A1; margin-bottom: 10px;">📋 Final Exam Schedule</h2>
+    
+    <div *ngIf="currentExamGroup && currentTerm" 
+         style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <mat-icon style="color: #1565C0;">info</mat-icon>
+        <div>
+          <strong style="color: #0D47A1;">Exam Group:</strong>
+          <span style="margin-left: 10px; font-size: 16px;">{{ currentExamGroup }}</span>
+        </div>
+      </div>
+      <div style="margin-top: 8px; margin-left: 34px;">
+        <strong style="color: #0D47A1;">Term:</strong>
+        <span style="margin-left: 10px; font-size: 16px;">{{ getTermYearLabel(currentTerm) }}</span>
+      </div>
+      <div style="margin-top: 8px; margin-left: 34px;">
+        <strong style="color: #0D47A1;">Total Entries:</strong>
+        <span style="margin-left: 10px; font-size: 16px;">{{ finalScheduleData.length }}</span>
+      </div>
+    </div>
+
+    <div style="margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+      <button mat-raised-button color="primary" (click)="refreshSchedule()">
+        <mat-icon>refresh</mat-icon>
+        Refresh
+      </button>
+      
+      <button mat-raised-button color="accent" (click)="exportToExcel()" 
+              [disabled]="finalScheduleData.length === 0">
+        <mat-icon>download</mat-icon>
+        Export to CSV
+      </button>
+      
+      <button mat-stroked-button color="primary" (click)="printSchedule()" 
+              [disabled]="finalScheduleData.length === 0">
+        <mat-icon>print</mat-icon>
+        Print
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="isLoading" style="text-align: center; padding: 40px;">
+    <mat-spinner style="margin: 0 auto;"></mat-spinner>
+    <p style="margin-top: 20px; color: #666;">Loading schedule...</p>
+  </div>
+
+  <!-- Always show table structure -->
+  <div *ngIf="!isLoading" class="table-container">
+    
+    <div *ngIf="finalScheduleData.length === 0" 
+         style="text-align: center; padding: 40px; color: #999; background: #fafafa; border-radius: 8px; margin-bottom: 20px;">
+      <mat-icon style="font-size: 64px; height: 64px; width: 64px; color: #ddd;">
+        assignment
+      </mat-icon>
+      <h3 style="color: #999; margin-top: 15px;">No schedule data available</h3>
+      <p>Please complete Student Mapping and Room Mapping steps first.</p>
+      <button mat-raised-button color="primary" (click)="refreshSchedule()" style="margin-top: 15px;">
+        <mat-icon>refresh</mat-icon> Refresh Data
+      </button>
+    </div>
+
+    <table mat-table [dataSource]="finalScheduleData" class="schedule-table" *ngIf="finalScheduleData.length > 0">
+      
+      <!-- Code Column -->
+      <ng-container matColumnDef="code">
+        <th mat-header-cell *matHeaderCellDef style="background-color: #1565C0; color: white; font-weight: 600;">
+          CODE
+        </th>
+        <td mat-cell *matCellDef="let row" style="font-weight: 500;">
+          {{ row.code }}
+        </td>
+      </ng-container>
+
+      <!-- Version Column -->
+      <ng-container matColumnDef="version">
+        <th mat-header-cell *matHeaderCellDef style="background-color: #1565C0; color: white; font-weight: 600;">
+          VERSION
+        </th>
+        <td mat-cell *matCellDef="let row">
+          {{ row.version }}
+        </td>
+      </ng-container>
+
+      <!-- Subject ID Column -->
+      <ng-container matColumnDef="subjectId">
+        <th mat-header-cell *matHeaderCellDef style="background-color: #1565C0; color: white; font-weight: 600;">
+          SUBJECT ID
+        </th>
+        <td mat-cell *matCellDef="let row" style="font-weight: 500;">
+          {{ row.subjectId }}
+        </td>
+      </ng-container>
+
+      <!-- Descriptive Title Column -->
+      <ng-container matColumnDef="descriptiveTitle">
+        <th mat-header-cell *matHeaderCellDef style="background-color: #1565C0; color: white; font-weight: 600; min-width: 250px;">
+          DESCRIPTIVE TITLE
+        </th>
+        <td mat-cell *matCellDef="let row">
+          {{ row.descriptiveTitle }}
+        </td>
+      </ng-container>
+
+      <!-- Course Column -->
+      <ng-container matColumnDef="course">
+        <th mat-header-cell *matHeaderCellDef style="background-color: #1565C0; color: white; font-weight: 600; min-width: 150px;">
+          COURSE
+        </th>
+        <td mat-cell *matCellDef="let row">
+          {{ row.course }}
+        </td>
+      </ng-container>
+
+      <!-- LEC Column -->
+      <ng-container matColumnDef="lec">
+        <th mat-header-cell *matHeaderCellDef style="background-color: #1565C0; color: white; font-weight: 600; text-align: center;">
+          LEC
+        </th>
+        <td mat-cell *matCellDef="let row" style="text-align: center;">
+          {{ row.lec }}
+        </td>
+      </ng-container>
+
+      <!-- Department Column -->
+      <ng-container matColumnDef="dept">
+        <th mat-header-cell *matHeaderCellDef style="background-color: #1565C0; color: white; font-weight: 600;">
+          DEPT
+        </th>
+        <td mat-cell *matCellDef="let row">
+          {{ row.dept }}
+        </td>
+      </ng-container>
+
+      <!-- Day Column -->
+      <ng-container matColumnDef="day">
+        <th mat-header-cell *matHeaderCellDef style="background-color: #1565C0; color: white; font-weight: 600;">
+          Day
+        </th>
+        <td mat-cell *matCellDef="let row">
+          {{ row.day }}
+        </td>
+      </ng-container>
+
+      <!-- Time Column -->
+      <ng-container matColumnDef="time">
+        <th mat-header-cell *matHeaderCellDef style="background-color: #1565C0; color: white; font-weight: 600; min-width: 150px;">
+          Time
+        </th>
+        <td mat-cell *matCellDef="let row">
+          {{ row.time }}
+        </td>
+      </ng-container>
+
+      <!-- Room Column -->
+      <ng-container matColumnDef="room">
+        <th mat-header-cell *matHeaderCellDef style="background-color: #1565C0; color: white; font-weight: 600;">
+          Room
+        </th>
+        <td mat-cell *matCellDef="let row" [style.color]="row.room === 'TBA' ? '#f44336' : 'inherit'">
+          {{ row.room }}
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+    </table>
+  </div>
+
+  <div *ngIf="!isLoading && finalScheduleData.length > 0" 
+       style="margin-top: 20px; padding: 15px; background: #f5f5f5; border-radius: 5px;">
+    <h4 style="color: #0D47A1; margin-bottom: 10px;">Summary Statistics</h4>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+      <div>
+        <p style="margin: 5px 0;"><strong>Total Exam Slots:</strong> {{ finalScheduleData.length }}</p>
+      </div>
+      <div>
+        <p style="margin: 5px 0;"><strong>Unique Subjects:</strong> {{ getUniqueSubjectCount() }}</p>
+      </div>
+      <div>
+        <p style="margin: 5px 0;"><strong>Rooms Assigned:</strong> {{ getAssignedRoomCount() }}</p>
+      </div>
+      <div>
+        <p style="margin: 5px 0;"><strong>Unassigned Rooms:</strong> {{ getUnassignedRoomCount() }}</p>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,121 @@
+.schedule-manager {
+  padding: 20px;
+  background: #fafafa;
+  font-family: 'Segoe UI', sans-serif;
+
+  h2 {
+    color: #2d3e50;
+    margin-bottom: 20px;
+    border-left: 5px solid #1976d2;
+    padding-left: 10px;
+  }
+
+  .buttons {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 25px;
+
+    button {
+      background-color: #1976d2;
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: background 0.25s ease;
+
+      &:hover {
+        background-color: #0d47a1;
+      }
+    }
+  }
+
+  .card {
+    background: white;
+    border-radius: 8px;
+    padding: 15px 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  }
+
+  ul {
+    list-style: none;
+    padding: 0;
+
+    li {
+      background: #f8f9fa;
+      border-left: 4px solid #1976d2;
+      margin-bottom: 8px;
+      padding: 10px 12px;
+      border-radius: 4px;
+    }
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15px;
+
+    th,
+    td {
+      border: 1px solid #e0e0e0;
+      padding: 10px;
+      text-align: center;
+    }
+
+    th {
+      background-color: #1976d2;
+      color: white;
+      font-weight: 500;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+
+    tr:hover {
+      background-color: #e3f2fd;
+    }
+  }
+}
+.imported-exams {
+  margin-bottom: 25px;
+
+  h3 {
+    color: #2d3e50;
+    margin-bottom: 10px;
+    border-bottom: 2px solid #1976d2;
+    display: inline-block;
+    padding-bottom: 3px;
+  }
+
+  .exam-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    background-color: #fafafa;
+
+    th,
+    td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: left;
+    }
+
+    th {
+      background-color: #e0e0e0;
+      color: #333;
+      font-weight: 600;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f5f5f5;
+    }
+
+    tr:hover {
+      background-color: #e3f2fd;
+    }
+  }
+}

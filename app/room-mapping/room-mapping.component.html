@@ -1,0 +1,137 @@
+<div class="room-mapping-container">
+  <h2 style="color:#0D47A1;">Room Mapping</h2>
+
+  <div style="margin-bottom: 20px; display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+    <button 
+      mat-raised-button 
+      color="accent" 
+      (click)="autoAssignAllDates()"
+      [disabled]="examDates.length === 0"
+      matTooltip="Automatically assign all dates at once"
+    >
+      <mat-icon>auto_fix_high</mat-icon> Auto-Assign All Dates
+    </button>
+
+    <button mat-stroked-button color="primary" (click)="saveToLocalStorage()">
+      <mat-icon>save</mat-icon> Save
+    </button>
+    
+    <button mat-stroked-button color="warn" (click)="clearAll()">
+      <mat-icon>delete_sweep</mat-icon> Clear All Dates
+    </button>
+  </div>
+
+  <div *ngIf="examDates.length === 0" style="padding: 20px; text-align: center; color: #999;">
+    <mat-icon style="font-size: 48px; height: 48px; width: 48px;">event_busy</mat-icon>
+    <p style="margin-top: 10px;">No exam dates available. Please complete Step 1 (Select Exam Dates) first.</p>
+  </div>
+
+  <div *ngIf="examDates.length > 0">
+    <mat-tab-group [(selectedIndex)]="selectedTabIndex" (selectedIndexChange)="onTabChange($event)">
+      <mat-tab *ngFor="let date of examDates; let i = index" [label]="'Day ' + (i + 1)">
+        <div style="margin-top: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h3 style="color: #1565C0; margin: 0;">
+              Room Assignments for {{ date | date: 'fullDate' }}
+            </h3>
+            
+            <div style="display: flex; gap: 10px;">
+              <button 
+                mat-raised-button 
+                color="accent" 
+                (click)="autoAssignRooms()"
+                matTooltip="Auto-assign rooms for this date"
+                style="font-size: 13px;"
+              >
+                <mat-icon>auto_fix_high</mat-icon> Auto-Assign
+              </button>
+
+              <button 
+                mat-stroked-button 
+                color="warn" 
+                (click)="clearCurrentDate()"
+                matTooltip="Clear assignments for this date"
+                style="font-size: 13px;"
+              >
+                <mat-icon>clear</mat-icon> Clear This Date
+              </button>
+            </div>
+          </div>
+
+          <div style="overflow-x: auto;">
+            <table border="1" cellspacing="0" cellpadding="8" 
+                   style="width: 100%; border-collapse: collapse; text-align: center;">
+              <thead style="background-color: #1565C0; color: white;">
+                <tr>
+                  <th style="min-width: 100px; position: sticky; left: 0; background-color: #1565C0; z-index: 2;">ROOM</th>
+                  <th *ngFor="let slot of timeSlots" style="min-width: 150px;">
+                    {{ slot }}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let room of roomList">
+                  <td style="font-weight: 600; background-color: #f5f5f5; position: sticky; left: 0; z-index: 1;">
+                    {{ room }}
+                    <div style="font-size: 11px; color: #666;">
+                      Cap: {{ getRoomCapacity(room) }}
+                    </div>
+                  </td>
+                  
+                  <td *ngFor="let slot of timeSlots">
+                    <select
+                      *ngIf="roomAssignments[selectedDate] && roomAssignments[selectedDate][room]"
+                      [(ngModel)]="roomAssignments[selectedDate][room][slot]"
+                      (change)="onAssignCode(room, slot, $event)"
+                      style="width: 140px; padding: 5px;"
+                      [style.background-color]="getCurrentAssignment(room, slot) ? '#e8f5e9' : 'white'"
+                    >
+                      <option value="">-- Select --</option>
+                      <option 
+                        *ngFor="let code of getAvailableCodesForCurrentSlot(slot)" 
+                        [value]="code"
+                      >
+                        {{ code }}
+                      </option>
+                    </select>
+                    
+                    <div 
+                      *ngIf="getCurrentAssignment(room, slot)" 
+                      style="font-size: 11px; color: #666; margin-top: 4px;"
+                    >
+                      <ng-container *ngIf="getSubjectDetailsForCode(getCurrentAssignment(room, slot), slot) as subjectDetails">
+                        <strong>{{ subjectDetails.subjectId }}</strong>
+                      </ng-container>
+                    </div>
+
+                    <div 
+                      *ngIf="!getCurrentAssignment(room, slot)" 
+                      style="font-size: 10px; color: #999; margin-top: 3px;"
+                    >
+                      {{ getAvailableCodesForCurrentSlot(slot).length }} codes
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Summary for current day -->
+          <div style="margin-top: 20px; padding: 15px; background: #f5f5f5; border-radius: 5px;">
+            <h4 style="color: #0D47A1; margin-bottom: 10px;">Assignment Summary for {{ date | date: 'mediumDate' }}</h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+              <div>
+                <p style="margin: 5px 0;"><strong>Total Rooms:</strong> {{ roomList.length }}</p>
+                <p style="margin: 5px 0;"><strong>Time Slots:</strong> {{ timeSlots.length }}</p>
+              </div>
+              <div>
+                <p style="margin: 5px 0;"><strong>Assigned Codes:</strong> {{ getAssignedCodesForDate(date) }}</p>
+                <p style="margin: 5px 0;"><strong>Available Codes:</strong> {{ getTotalCodesForDate(date) }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  </div>
+</div>

@@ -1,0 +1,33 @@
+<div *ngIf="visible" class="popup-overlay">
+  <div class="popup-content">
+    <button class="close-btn" (click)="close()">X</button>
+    <ng-content></ng-content> <!-- Content from parent component -->
+  </div>
+</div>
+
+<!-- here's how to use the pop-up -->
+<!-- html
+  <app-popup [visible]="isPopupVisible" (closePopup)="onPopupClosed()">
+      <h2>Popup Title</h2>
+      <p>This is some content inside the popup.</p>
+      <button (click)="onAction()">Do Something</button>
+  </app-popup>
+
+-->
+<!-- typescript
+  isPopupVisible: boolean = false;
+
+  showPopup() { //use this function on click event of your html tag that you assigned as a trigger
+    this.isPopupVisible = true;
+  }
+
+  onPopupClosed() {
+    this.isPopupVisible = false;
+  }
+
+  onAction() {
+    // Perform some action, then close the popup if needed
+    console.log('Action performed');
+    this.isPopupVisible = false;
+  }
+-->

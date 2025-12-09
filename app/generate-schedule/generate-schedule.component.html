@@ -1,0 +1,45 @@
+<div class="schedule-manager">
+  <h2>Exam Schedule Manager</h2>
+
+  <div class="buttons">
+    <button (click)="importData()"> Fetch Data</button>
+    <button (click)="generateExamSchedule()"> Generate Schedule</button>
+  </div>
+
+ <div *ngIf="exams.length > 0" class="imported-exams">
+  <h3>Imported Exams</h3>
+  <table class="exam-table">
+    <tr>
+      <th>Title</th>
+      <th>Course</th>
+      <th>Instructor</th>
+    </tr>
+    <tr *ngFor="let exam of exams">
+      <td>{{ exam.title }}</td>
+      <td>{{ exam.course }}</td>
+      <td>{{ exam.instructor }}</td>
+    </tr>
+  </table>
+</div>
+  
+
+  <div *ngIf="generatedSchedule.length > 0" class="card">
+    <h3>Generated Schedule</h3>
+    <table>
+      <tr>
+        <th>Subject</th>
+        <th>Course</th>
+        <th>Room</th>
+        <th>Day</th>
+        <th>Time</th>
+      </tr>
+      <tr *ngFor="let item of generatedSchedule">
+        <td>{{ item.subject }}</td>
+        <td>{{ item.course }}</td>
+        <td>{{ item.room }}</td>
+        <td>{{ item.day }}</td>
+        <td>{{ item.time }}</td>
+      </tr>
+    </table>
+  </div>
+</div>

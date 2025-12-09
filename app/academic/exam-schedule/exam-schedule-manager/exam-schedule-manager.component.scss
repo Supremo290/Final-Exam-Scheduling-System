@@ -1,0 +1,29 @@
+#example-card-x{
+
+	.example-form {
+		  min-width: 150px;
+		  max-width: 580px;
+		  width: 100%;
+		}
+
+		::ng-deep .mat-card-header {
+		    background-color: #294a70 !important;
+		    padding: 15px 5px 5px 5px !important;
+		    color:white;
+		}
+		::ng-deep .mat-card-header * {
+		    color:white;
+		}
+
+		::ng-deep .mat-card {
+		    padding: 0 !important;
+		}
+
+		::ng-deep .mat-card-content {
+		    padding: 15px !important;
+		}
+		
+  	mat-form-field{
+	  margin-bottom: -20px;
+	}
+}

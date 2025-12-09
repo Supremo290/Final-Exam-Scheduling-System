@@ -1,0 +1,67 @@
+<mat-drawer-container [style]='vars' class="example-container">
+
+<mat-card style="float: left;width: 300px;margin-left: 7%;margin-top: 20vh;">
+        <div class="login-container">
+             <div class="login-box-header">
+                <h3>Sign In</h3>
+            </div>
+              <div style="height: 5px;background-color: #ffab1f;
+                margin-bottom:20px;"></div>
+            <div class="login-box-body">
+                 <mat-grid-list cols="9" rowHeight="75px">
+                    <mat-grid-tile [rowspan]="1" class="login-icon">
+                        <mat-icon>lock</mat-icon>
+                    </mat-grid-tile>
+                    <mat-grid-tile [colspan]="7">
+                        <mat-form-field class="justifier">
+                            <input matInput placeholder="ID Number" text="text" [(ngModel)]="username"  [disabled]="disabled">
+                        </mat-form-field>
+                    </mat-grid-tile>
+                </mat-grid-list>
+                <mat-grid-list cols="9" rowHeight="100px">
+                    <mat-grid-tile [rowspan]="1"  class="login-icon">
+                        <mat-icon>remove_red_eye</mat-icon>
+                    </mat-grid-tile>
+                    <mat-grid-tile [colspan]="7">
+                        <mat-form-field class="justifier">
+                            <input matInput placeholder="Password" text="password" type="password"  [(ngModel)]="password"  [disabled]="disabled">
+                        </mat-form-field>
+                    </mat-grid-tile>
+                </mat-grid-list> 
+                <button  type='submit' color="primary"   mat-raised-button style="float: right" (click)="login()" [disabled]="disabled"> 
+                    <mat-icon>input</mat-icon> Login
+                </button>
+                <br>
+                <br>
+            </div>            
+        </div>
+</mat-card>
+
+<div style="float: left; width: calc(100% - 610px);margin-top: 10vh;margin-right: 75px;margin-left: 75px; max-width: 1000px;min-width: 300px">
+    <mat-card>
+        <div class="login-container2">
+             <div class="login-box-header">
+                <h3>CONFIDENTIALITY AND PROTECTION OF DATA INTEGRITY STATEMENT - READ CAREFULLY</h3>
+            </div>
+              <div style="height: 5px;background-color: #ffab1f;
+                margin-bottom:20px;"></div>
+            <div class="login-box-body">
+                <div style="max-height: calc(100vh - 400px);overflow: hidden;overflow-y: scroll;">
+                 <p>
+                     When using this program and other programs I am authorized to access, I agree that I will not, outside of the performance of my duties, access, print, and copy or disclose to any party (employee, student or anyone else) proprietary, confidential, and/or protected information. I also agree not to disclose to any party (employee, student, or anyone else) my access codes and/or passwords. I agree to treat as confidential all information to which I have been granted access. I also agree that I will ensure that measures have been taken to protect critical information against accidental or unauthorized modification or destruction, in order to ensure the reliability and integrity of information
+                </p><p>
+                I further agree to keep confidential any and all data or information, whether in electronic or printed format, and to comply with the Information Security Policies on Information and Data Management in accordance with the policies and procedures of University, and existing laws. This includes the confidentiality of information concerning students, employees, and other stakeholders, as well as the University's proprietary information.
+                </p><p>
+                I understand that if I fail to abide by these conditions, my access to any and all computer systems may be terminated and that disciplinary action, including possible termination of employment, may be instituted against me.
+                </p>
+                </div>
+                <p>
+                <mat-checkbox (click)="checkiagree()">I have read the above policy.</mat-checkbox> I understand the contents, and I agree to comply with the said Policy.
+                 </p>
+            </div>            
+        </div>
+</mat-card>
+</div>
+
+
+</mat-drawer-container>

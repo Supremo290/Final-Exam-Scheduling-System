@@ -1,0 +1,146 @@
+<mat-card class="example-card" id="example-card-x"  style="padding: 0">
+   <mat-card-header >
+    <mat-card-title><b>Exam Schedule</b></mat-card-title>
+  </mat-card-header>
+  <mat-card-content class='colo'>
+    <mat-divider></mat-divider>
+
+        <button mat-raised-button (click)="uploadthis.click()" 
+          style="font-size:12px;min-width:18px;line-height: 15px;height: 28px; padding: 0;margin-left: 5px;margin-top: 5px;margin-bottom: 10px;background-color:#006600;color: white;" *ngIf="global.checkaccess(':Code:ExamScheduleDelete')">
+            &nbsp;&nbsp;<i class="material-icons">cloud_upload</i> 
+            <span style="margin-top: 7px"> Upload schedule&nbsp;&nbsp;&nbsp;</span>
+        </button>
+
+        <button mat-raised-button color="primary"style="width: 80px;color:white;float: right;margin-top: 5px;" class="buttondesign" (click)="funcSave()" *ngIf="savetemp&&global.checkaccess(':Code:ExamScheduleInsert')">
+            <i class="material-icons" >done_all</i> 
+            <span style="margin-top: 7px"> Save&nbsp;&nbsp;</span>
+        </button>
+        <button mat-raised-button style="width: 80px;background-color:#990000;color:white;float: right;margin-top: 5px;" class="buttondesign" (click)="loadexam()" *ngIf="savetemp&&global.checkaccess(':Code:ExamScheduleInsert')">
+            <i class="material-icons">cancel_presentation</i> 
+            <span style="margin-top: 7px"> Cancel&nbsp;&nbsp;</span>
+        </button>
+
+        <div *ngIf="datadisplay!=undefined" style="float: right;">
+                <button mat-raised-button color="primary"style="width: 120px;color:white;float: right;margin-top: 5px;" class="buttondesign" (click)="loadexam()" *ngIf="datadisplay.length===0">
+                    <i class="material-icons" >donut_small</i> 
+                    <span style="margin-top: 7px"> Load schedules&nbsp;&nbsp;</span>
+                </button>
+         </div>
+
+        <div *ngIf="firstdata!=undefined" style="float: right;">             
+        <button mat-raised-button style="width: 80px;background-color:#990000;color:white;float: right;margin-top: 5px;" class="buttondesign" (click)="funcDelete()" *ngIf="global.checkaccess(':Code:ExamScheduleDelete')&&!savetemp&&datadisplay==undefined&&firstdata.length!=0">
+            <i class="material-icons">code</i> 
+            <span style="margin-top: 7px"> Clear&nbsp;&nbsp;</span>
+        </button>
+        <button mat-raised-button style="width: 125px;background-color:#006600;color:white;float: right;margin-top: 5px;" class="buttondesign" (click)="exportAsXLSX()" *ngIf="!savetemp&&datadisplay==undefined&&firstdata.length!=0">
+            <i class="material-icons">save_alt</i> 
+            <span style="margin-top: 7px"> Download list&nbsp;&nbsp;</span>
+        </button>
+        </div>
+
+<input type="file" (change)="onFileChange($event)" multiple="false"  #uploadthis/>
+  
+  <div style="max-height: calc(100vh - 310px); overflow-y: scroll;">
+
+    <table class="apptable" *ngIf="datadisplay==undefined">
+    	<tr>
+    		<th style="width: 50px">
+    			Code
+    		</th>
+    		<th style="width: 100px">
+    			Subject ID
+    		</th>
+    		<th>
+    			Descriptive Title
+    		</th>
+			<th style="width: 100px">
+    			Date
+    		</th>
+    		<th style="width: 100px">
+    			Day
+    		</th>
+    		<th style="width: 100px">
+    			Time
+    		</th>
+    		<th style="width: 60px">
+    			Room
+    		</th>
+    	</tr>
+    	<tr *ngFor="let a of firstdata">
+    		<td>
+    			{{a.codeNo}}
+    		</td>
+    		<td>
+    			{{a.subjectID}}
+    		</td>
+    		<td>
+    			{{a.title}}
+    		</td>
+				<td>
+    			{{a.examDate.substring(0, 10)}}
+    		</td>
+    		<td>
+    			{{a.day}}
+    		</td>
+    		<td>
+    			{{a.examTime}}
+    		</td>
+    		<td>
+    			{{a.roomNumber}}
+    		</td>
+    	</tr>
+    	<tr>
+    		<td colspan="7">
+                  <mat-spinner style="margin-left: auto;margin-right: auto;" *ngIf="firstdata===undefined"></mat-spinner>
+			         <div *ngIf="firstdata!=undefined">
+			          		<p *ngIf="firstdata.length===0" style="text-align: center;">
+			          			<i>- No Data -</i>
+			          		</p>
+			         </div>
+    		</td>
+    	</tr>
+    </table>
+    <table class="apptable" *ngIf="datadisplay!=undefined">
+    	<tr>
+    		<th style="width: 50px">
+    			Code
+    		</th>
+    		<th style="width: 100px">
+    			Subject ID
+    		</th>
+    		<th>
+    			Descriptive Title
+    		</th>
+    		<th style="width: 100px">
+    			Date
+    		</th>
+    		<th style="width: 100px">
+    			Time
+    		</th>
+    		<th style="width: 60px">
+    			Room
+    		</th>
+    	</tr>
+    	<tr *ngFor="let row of datadisplay" >
+			<td *ngFor="let val of row; let i = index">
+				<span>{{val}}</span>
+			</td>
+		</tr>
+    	<tr>
+    		<td colspan="7">
+                  <mat-spinner style="margin-left: auto;margin-right: auto;" *ngIf="datadisplay===undefined"></mat-spinner>
+			         <div *ngIf="datadisplay!=undefined">
+			          		<p *ngIf="datadisplay.length===0" style="text-align: center;">
+			          			<i>- Error reading uploaded file. -</i>
+			          		</p>
+			         </div>
+    		</td>
+    	</tr>
+    </table>
+
+   </div>
+
+   		
+
+</mat-card-content>
+</mat-card>

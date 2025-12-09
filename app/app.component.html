@@ -1,0 +1,38 @@
+<mat-toolbar color="primary">
+
+  <mat-toolbar-row>
+    <img src="assets/logo.png" height="50px">
+
+    <div>
+      <div *ngIf="warning=='You are accessing the test database server'" style="display: flex;">
+        <p>{{warning}}</p>
+        <mat-icon style="font-size: 30px; margin-top: 21px; margin-left: 7px;">developer_mode</mat-icon>
+      </div>
+      <p *ngIf=" warning=='You are now accessing the live database server'">{{warning}}</p>
+    </div>
+    <span class=" example-spacer"></span>
+    <!--
+    <button mat-button>About</button>
+    <button mat-button>Services</button>
+    <button mat-button>
+      <mat-icon>input</mat-icon> Login</button>-->
+    <!--  <button mat-icon-button [matMenuTriggerFor]="menu" *ngIf="global.getSession()!=null">
+  <mat-icon>more_vert</mat-icon>
+  </button>
+  <mat-menu #menu="matMenu">
+    <button mat-menu-item>
+      <mat-icon>dialpad</mat-icon>
+      <span>Redial</span>
+    </button>--><!--
+    <button mat-menu-item (click)="logout()">
+      <mat-icon>exit_to_app</mat-icon>
+      <span> Logout</span>
+    </button>
+  </mat-menu> -->
+  </mat-toolbar-row>
+</mat-toolbar>
+<div style="height: 5px;background-color: #ffab1f"></div>
+<div id="loaderinside" style="margin-left:auto;margin-right:auto;margin-top: calc(50vh - 150px);width: 500px">
+  <img src="assets/loading.gif" style="margin-left: calc(50% - 50px)">
+</div>
+<router-outlet></router-outlet>

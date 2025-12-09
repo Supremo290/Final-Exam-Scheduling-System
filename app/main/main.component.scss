@@ -1,0 +1,44 @@
+.mat-drawer{
+	width:300px;
+}
+.mat-list .mat-list-item, .mat-nav-list .mat-list-item, .mat-selection-list .mat-list-item {
+	font-size: 14px;
+}
+.mat-list .mat-list-item, .mat-list .mat-list-option, .mat-nav-list .mat-list-item, .mat-nav-list .mat-list-option, .mat-selection-list .mat-list-item, .mat-selection-list .mat-list-option{
+	height:38px;
+}
+.mat-list .mat-list-item, .mat-list .mat-list-option, .mat-nav-list .mat-list-item, .mat-nav-list .mat-list-option, .mat-selection-list .mat-list-item, .mat-selection-list .mat-list-option{
+	padding-top:0;
+}
+.iconsize{
+	font-size: 18px
+}
+.mat-button{
+	width:100%;
+	text-align:left;
+	padding-left:5px;
+	padding-right:5px;
+}
+
+#main{
+	a:focus{
+		background-color: #dbdbdb;
+	}
+}
+
+.mat-expansion-panel:not([class*='mat-elevation-z']) {
+    box-shadow: none;
+}
+
+
+.sa-monitoring-panel {
+    font-size: 14px;
+}
+
+.sa-monitoring-panel .mat-panel-title, 
+.sa-monitoring-panel a, 
+.sa-monitoring-panel .material-icons {
+    font-size: 14px !important;
+}
+
+

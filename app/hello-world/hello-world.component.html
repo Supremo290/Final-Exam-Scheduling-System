@@ -1,0 +1,49 @@
+<div>
+<h4>Province</h4>
+    <mat-form-field>
+        <mat-label>Province</mat-label>
+        <mat-select [(ngModel)]="selectedProvince" name="province"
+        (selectionChange)="getTownsCities(selectedProvince)">
+            <mat-option *ngFor="let p of provinces" [value]="p.province">
+        {{ p.province }}
+        </mat-option> 
+    </mat-select>
+    </mat-form-field>
+    <p>Province: {{selectedProvince}}</p>
+</div>
+
+
+<div *ngIf="townsCities !=undefined">
+    <h4>TownCities</h4>
+ <mat-form-field>
+    <mat-label>TownCities</mat-label>
+    <mat-select [(ngModel)]="selectedTownCity" name="townOrCity"
+    (selectionChange)="getBarangays(selectedProvince, selectedTownCity)">
+        <mat-option *ngFor="let t of townsCities" [value]="t.townOrCity">
+    {{ t.townOrCity }}
+    </mat-option> 
+    </mat-select>
+ </mat-form-field>
+    <p>Town/City: {{selectedTownCity}}</p>
+</div>
+
+
+<div *ngIf="barangays !=undefined">
+    <h4>Barangay</h4>
+ <mat-form-field>
+    <mat-label>Barangays</mat-label>
+    <mat-select [(ngModel)]="selectedBarangays" name="barangay">
+        <mat-option *ngFor="let b of barangays" [value]="b.barangay">
+    {{ b.barangay }}
+    </mat-option> 
+    </mat-select>
+ </mat-form-field>
+    <p>Barangay: {{selectedBarangays}}</p>
+</div>
+
+<div *ngIf="fullAddress">
+    <p>Full Address</p>
+    <p>{{fullAddress}}</p>
+</div>
+
+
