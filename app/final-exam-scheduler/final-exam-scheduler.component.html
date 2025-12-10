@@ -10,223 +10,181 @@
 
 
  <!-- STEP 1: IMPORT -->
+<!-- STEP 1: IMPORT -->
 <div *ngIf="currentStep === 'import'" class="card">
-  
-
   <h2>Step 1: Select Exam Group & Generate Schedule</h2>
-  <!-- ENHANCED: Exam Group Management Section with Full Features -->
- <div class="section exam-group-section" style="background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 25px; margin-bottom: 25px;">
-  
-  <!-- Header -->
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-    <h3 style="margin: 0; color: #1e40af; display: flex; align-items: center; gap: 10px;">
-      <mat-icon>calendar_today</mat-icon>
-      Saved Exam Groups
-    </h3>
-    <button mat-raised-button color="primary" (click)="openDatePickerDialog()">
-      <mat-icon>add</mat-icon>
-      Add Dates
-    </button>
-  </div>
 
-  <!-- ✅ TABLE (NUMBER 1) -->
-  <div *ngIf="savedExamGroups && savedExamGroups.length > 0; else noGroups" 
-       style="overflow-x: auto;">
-    <table style="width: 100%; border-collapse: collapse; background: white;">
-      <thead style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; position: sticky; top: 0; z-index: 10;">
-        <tr>
-          <th style="padding: 15px; text-align: left; font-weight: 600; white-space: nowrap;">Term & Year</th>
-          <th style="padding: 15px; text-align: left; font-weight: 600; white-space: nowrap;">Exam Period</th>
-          <th style="padding: 15px; text-align: left; font-weight: 600; white-space: nowrap;">Exam Dates</th>
-          <th style="padding: 15px; text-align: center; font-weight: 600; white-space: nowrap;">Use</th>
-          <th style="padding: 15px; text-align: center; font-weight: 600; white-space: nowrap;">Duplicate</th>
-          <th style="padding: 15px; text-align: center; font-weight: 600; white-space: nowrap;">Edit</th>
-          <th style="padding: 15px; text-align: center; font-weight: 600; white-space: nowrap;">Delete</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let group of savedExamGroups"
-            [class.selected-group]="selectedExamGroup && selectedExamGroup.name === group.name"
-            style="transition: all 0.2s; border-bottom: 1px solid #e5e7eb;">
-          
-          <td style="padding: 12px;">{{ getTermYearLabel(group.termYear || '') }}</td>
-          <td style="padding: 12px; font-weight: 500;">{{ group.name }}</td>
-          <td style="padding: 12px; font-size: 13px; color: #6b7280;">{{ getDateRange(group.days || []) }}</td>
-          
-          <!-- ✅ Use Button with Loading -->
-          <td style="padding: 12px; text-align: center;">
-            <button 
-              mat-raised-button 
-              color="primary" 
-              (click)="selectExamGroup(group)"
-              [disabled]="isLoadingApi"
-              style="min-width: 100px;">
-              <mat-icon *ngIf="!isLoadingApi && (!selectedExamGroup || selectedExamGroup.name !== group.name)">
-                check_circle
-              </mat-icon>
-              <mat-icon *ngIf="!isLoadingApi && selectedExamGroup && selectedExamGroup.name === group.name" 
-                        style="color: #10b981;">
-                check_circle
-              </mat-icon>
-              <mat-icon *ngIf="isLoadingApi && selectedExamGroup && selectedExamGroup.name === group.name" 
-                        class="spinning">
-                hourglass_empty
-              </mat-icon>
-              {{ isLoadingApi && selectedExamGroup && selectedExamGroup.name === group.name ? 'Loading...' : 'Use' }}
-            </button>
-          </td>
-          
-          <td style="padding: 12px; text-align: center;">
-            <button mat-icon-button color="accent" (click)="duplicateGroup(group)" [disabled]="isLoadingApi">
-              <mat-icon>content_copy</mat-icon>
-            </button>
-          </td>
-          <td style="padding: 12px; text-align: center;">
-            <button mat-icon-button color="primary" (click)="editGroup(group)" [disabled]="isLoadingApi">
-              <mat-icon>edit</mat-icon>
-            </button>
-          </td>
-          <td style="padding: 12px; text-align: center;">
-            <button mat-icon-button color="warn" (click)="deleteGroup(group.name)" [disabled]="isLoadingApi">
-              <mat-icon>delete</mat-icon>
-            </button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <!-- Empty State -->
-  <ng-template #noGroups>
-    <div style="text-align: center; padding: 40px; background: #f9fafb; border-radius: 8px; border: 2px dashed #d1d5db;">
-      <mat-icon style="font-size: 48px; width: 48px; height: 48px; color: #9ca3af; margin-bottom: 15px;">
-        calendar_today
-      </mat-icon>
-      <p style="color: #6b7280; font-size: 16px; margin: 0;">No exam groups saved yet</p>
-      <p style="color: #9ca3af; font-size: 14px; margin-top: 8px;">Click "Add Dates" to create your first exam group</p>
+  <!-- ✅ EXAM GROUP MANAGEMENT SECTION -->
+  <div class="section exam-group-section" style="background: #e3f2fd; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+      <h3 style="color: #0D47A1; margin: 0;">Exam Group Management</h3>
+      <button 
+        mat-stroked-button 
+        color="primary" 
+        (click)="toggleExamGroupManager()"
+        style="font-size: 13px;">
+        <mat-icon>{{ showExamGroupManager ? 'expand_less' : 'expand_more' }}</mat-icon>
+        {{ showExamGroupManager ? 'Hide' : 'Manage' }} Groups
+      </button>
     </div>
-  </ng-template>
-</div>
 
-<!-- ===================================== -->
-<!-- EXAM DATES DISPLAY (NUMBER 2) -->
-<!-- ===================================== -->
-<div class="section" style="background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 25px; margin-bottom: 25px;">
-  <h3 style="margin: 0 0 20px 0; color: #1e40af; display: flex; align-items: center; gap: 10px;">
-    <mat-icon>calendar_month</mat-icon>
-    Exam Dates (from selected group)
-  </h3>
+    <!-- Selected Group Display (when collapsed) -->
+    <div *ngIf="selectedExamGroup && !showExamGroupManager" 
+         style="background: white; padding: 15px; border-radius: 5px; border-left: 4px solid #1565C0;">
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+        <mat-icon style="color: #1565C0;">check_circle</mat-icon>
+        <strong style="color: #0D47A1;">Selected Group:</strong>
+        <span style="font-size: 16px;">{{ selectedExamGroup.name }}</span>
+      </div>
+      <div style="margin-left: 34px; color: #666; font-size: 14px;">
+        <span>{{ getTermYearLabel(selectedExamGroup.termYear!) }}</span>
+        <span style="margin-left: 15px;">{{ selectedExamGroup.days.length }} exam days</span>
+      </div>
+    </div>
 
-  <!-- Info Banner - Group Selected -->
-  <div *ngIf="selectedExamGroup" 
-       style="padding: 15px; margin-bottom: 20px; background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); border-left: 4px solid #10b981; border-radius: 8px;">
-    <div style="display: flex; align-items: center; gap: 10px;">
-      <mat-icon style="color: #10b981;">check_circle</mat-icon>
-      <div>
-        <div style="font-size: 14px; color: #065f46; font-weight: 600;">
-          Exam dates automatically set from: {{ selectedExamGroup.name }}
-        </div>
-        <div *ngIf="exams.length > 0" style="font-size: 12px; color: #047857; margin-top: 4px;">
-          ✅ {{ exams.length }} exams loaded and ready to schedule
-        </div>
+    <!-- Full Table (when expanded) -->
+    <div *ngIf="showExamGroupManager" style="background: white; padding: 20px; border-radius: 5px; margin-top: 15px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <h4 style="color: #1565C0; margin: 0;">Saved Exam Groups</h4>
+        <button mat-raised-button color="primary" (click)="openDatePickerDialog()">
+          <mat-icon>add</mat-icon>
+          Add Dates
+        </button>
+      </div>
+
+      <!-- Table with proper headers -->
+      <div style="max-height: 400px; overflow-y: auto;">
+        <table class="apptable" style="width: 100%; border-collapse: collapse;">
+          <thead style="position: sticky; top: 0; background: #1f2937; z-index: 10;">
+            <tr>
+              <th style="padding: 12px; color: white; text-align: left; width: 180px;">Term & Year</th>
+              <th style="padding: 12px; color: white; text-align: left; width: 150px;">Exam Period</th>
+              <th style="padding: 12px; color: white; text-align: left;">Exam Dates</th>
+              <th style="padding: 12px; color: white; text-align: center; width: 80px;">Use</th>
+              <th style="padding: 12px; color: white; text-align: center; width: 100px;">Duplicate</th>
+              <th style="padding: 12px; color: white; text-align: center; width: 80px;">Edit</th>
+              <th style="padding: 12px; color: white; text-align: center; width: 80px;">Delete</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Empty state -->
+            <tr *ngIf="!savedExamGroups || savedExamGroups.length === 0">
+              <td colspan="7" style="text-align: center; padding: 30px; color: #999; font-style: italic;">
+                No exam groups saved yet. Click "Add Dates" to create one.
+              </td>
+            </tr>
+
+            <!-- Data rows -->
+            <tr *ngFor="let group of savedExamGroups" 
+                [style.background-color]="selectedExamGroup && selectedExamGroup.name === group.name ? '#e8f5e9' : 'transparent'"
+                style="border-bottom: 1px solid #e0e0e0;">
+              
+              <!-- Term & Year -->
+              <td style="padding: 10px;">{{ getTermYearLabel(group.termYear || '') }}</td>
+              
+              <!-- Exam Period (Group Name) -->
+              <td style="padding: 10px;"><strong>{{ group.name }}</strong></td>
+              
+              <!-- Date Range -->
+              <td style="padding: 10px; font-size: 13px;">{{ getDateRange(group.days || []) }}</td>
+              
+              <!-- Use Button -->
+              <td style="padding: 10px; text-align: center;">
+                <button 
+                  mat-icon-button 
+                  color="primary" 
+                  (click)="selectExamGroup(group)" 
+                  matTooltip="Use this group"
+                  [disabled]="isLoadingApi || (selectedExamGroup && selectedExamGroup.name === group.name)">
+                  <mat-icon>{{ selectedExamGroup && selectedExamGroup.name === group.name ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
+                </button>
+              </td>
+
+              <!-- Duplicate Button -->
+              <td style="padding: 10px; text-align: center;">
+                <button 
+                  mat-icon-button 
+                  color="accent"
+                  (click)="duplicateGroup(group)" 
+                  matTooltip="Duplicate this exam group"
+                  [disabled]="isLoadingApi">
+                  <mat-icon>content_copy</mat-icon>
+                </button>
+              </td>
+              
+              <!-- Edit Button -->
+              <td style="padding: 10px; text-align: center;">
+                <button 
+                  mat-icon-button 
+                  color="accent" 
+                  (click)="editGroup(group)" 
+                  matTooltip="Edit this group"
+                  [disabled]="isLoadingApi">
+                  <mat-icon>edit</mat-icon>
+                </button>
+              </td>
+              
+              <!-- Delete Button -->
+              <td style="padding: 10px; text-align: center;">
+                <button 
+                  mat-icon-button 
+                  color="warn" 
+                  (click)="deleteGroup(group.name)" 
+                  matTooltip="Delete this group"
+                  [disabled]="isLoadingApi">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
 
-  <!-- Warning - No Group Selected -->
-  <div *ngIf="!selectedExamGroup" 
-       style="padding: 15px; margin-bottom: 20px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 8px;">
-    <div style="display: flex; align-items: center; gap: 10px;">
-      <mat-icon style="color: #f59e0b;">warning</mat-icon>
-      <div style="font-size: 14px; color: #92400e;">
-        Please select an exam group above by clicking the "Use" button
-      </div>
-    </div>
-  </div>
-
-  <!-- Exam Dates Grid (Read-only) -->
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
-    <div *ngFor="let date of examDates; let i = index" 
-         style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 2px solid #e2e8f0;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-        <label style="font-weight: 600; color: #475569; font-size: 14px;">Day {{ i + 1 }}</label>
-        <mat-icon style="color: #64748b; font-size: 20px;">event</mat-icon>
-      </div>
-      <input 
-        type="date" 
-        [(ngModel)]="examDates[i]"
-        [disabled]="true"
-        style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; background: #f1f5f9; color: #475569; cursor: not-allowed;">
-    </div>
-  </div>
-
-  <!-- Note -->
-  <div style="margin-top: 20px; padding: 12px; background: #dbeafe; border-radius: 8px; border-left: 4px solid #3b82f6;">
-    <p style="margin: 0; color: #1e40af; font-size: 13px;">
-      <mat-icon style="vertical-align: middle; font-size: 18px; margin-right: 5px;">info</mat-icon>
-      To change exam dates, edit the exam group by clicking the <strong>Edit</strong> button above
-    </p>
-  </div>
-</div>
-
-<!-- ===================================== -->
-<!-- GENERATE SCHEDULE BUTTON (NUMBER 3) -->
-<!-- ===================================== -->
-<div style="background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 30px; text-align: center; margin-bottom: 25px;">
-  
-  <!-- Status Indicator -->
-  <div *ngIf="selectedExamGroup && exams.length > 0" 
-       style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; background: #d1fae5; border-radius: 20px; margin-bottom: 20px;">
-    <mat-icon style="color: #10b981; font-size: 20px; width: 20px; height: 20px;">check_circle</mat-icon>
-    <span style="color: #065f46; font-weight: 600; font-size: 14px;">
-      Ready to Generate ({{ exams.length }} exams loaded)
-    </span>
-  </div>
-
-  <!-- Generate Button -->
-  <button 
-    mat-raised-button 
-    color="primary" 
-    (click)="generateExamSchedule()"
-    [disabled]="!selectedExamGroup || exams.length === 0 || isLoadingApi"
-    style="font-size: 18px; padding: 15px 50px; height: auto; background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">
-    <mat-icon style="margin-right: 10px;">play_arrow</mat-icon>
-    Generate Schedule
-  </button>
-
-  <!-- Helpful Messages -->
-  <div style="margin-top: 20px;">
+  <!-- ✅ Exam Dates Section (Only show when group is selected) -->
+  <div *ngIf="selectedExamGroup" class="section">
+    <h3>📆 Exam Dates (from selected group)</h3>
     
-    <!-- Step 1: No group selected -->
-    <div *ngIf="!selectedExamGroup" 
-         style="padding: 15px; background: #fef3c7; border-radius: 8px; border-left: 4px solid #f59e0b; display: inline-block; max-width: 500px;">
-      <p style="margin: 0; color: #92400e; font-size: 14px;">
-        <mat-icon style="vertical-align: middle; font-size: 18px; margin-right: 5px;">info</mat-icon>
-        <strong>Step 1:</strong> Select an exam group by clicking the "Use" button above
+    <div style="background: #e8f5e9; padding: 15px; border-radius: 5px; margin-bottom: 15px;">
+      <p style="color: #2e7d32; margin: 0; display: flex; align-items: center; gap: 10px;">
+        <mat-icon style="vertical-align: middle; color: #2e7d32;">info</mat-icon>
+        <span>Exam dates automatically set from: <strong>{{ selectedExamGroup.name }}</strong></span>
       </p>
     </div>
 
-    <!-- Step 2: Loading data -->
-    <div *ngIf="isLoadingApi" 
-         style="padding: 15px; background: #dbeafe; border-radius: 8px; border-left: 4px solid #3b82f6; display: inline-block; max-width: 500px;">
-      <p style="margin: 0; color: #1e40af; font-size: 14px;">
-        <mat-icon style="vertical-align: middle; font-size: 18px; margin-right: 5px; animation: spin 1s linear infinite;">
-          hourglass_empty
-        </mat-icon>
-        <strong>Step 2:</strong> Loading exam data from API...
-      </p>
+    <div class="form-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+      <div class="form-group" *ngFor="let day of days; let i = index">
+        <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #374151;">
+          {{ day }}
+        </label>
+        <input 
+          type="date" 
+          class="form-control" 
+          [(ngModel)]="examDates[i]"
+          disabled
+          style="background-color: #f3f4f6; cursor: not-allowed; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; width: 100%;"
+        />
+      </div>
     </div>
 
-    <!-- Step 3: Ready to generate -->
-    <div *ngIf="selectedExamGroup && exams.length > 0 && !isLoadingApi" 
-         style="padding: 15px; background: #d1fae5; border-radius: 8px; border-left: 4px solid #10b981; display: inline-block; max-width: 500px;">
-      <p style="margin: 0; color: #065f46; font-size: 14px;">
-        <mat-icon style="vertical-align: middle; font-size: 18px; margin-right: 5px;">check</mat-icon>
-        <strong>All set!</strong> Click "Generate Schedule" to create your exam schedule
-      </p>
+    <small style="color: #666; font-style: italic; margin-top: 15px; display: block; padding: 10px; background: #fffbeb; border-left: 3px solid #f59e0b; border-radius: 4px;">
+      💡 To change exam dates, edit the exam group by clicking the <strong>Edit</strong> button above
+    </small>
+  </div>
+
+  <!-- ✅ Warning when no group selected -->
+  <div *ngIf="!selectedExamGroup" class="section" style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 20px; border-radius: 8px;">
+    <div style="display: flex; align-items: center; gap: 15px;">
+      <mat-icon style="color: #f59e0b; font-size: 48px; width: 48px; height: 48px;">warning</mat-icon>
+      <div>
+        <h3 style="margin: 0 0 8px 0; color: #92400e;">No Exam Group Selected</h3>
+        <p style="margin: 0; color: #78350f;">
+          Please select or create an exam group above to continue with schedule generation.
+        </p>
+      </div>
     </div>
   </div>
-</div>
 
   <!-- ✅ Generate button (Only shows when group is selected) -->
   <div *ngIf="selectedExamGroup" style="margin-top: 30px; text-align: center;">

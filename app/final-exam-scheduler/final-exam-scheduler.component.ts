@@ -132,7 +132,7 @@ export class FinalExamSchedulerComponent implements OnInit {
   
   selectedExamGroup: ExamGroup | null = null;
   savedExamGroups: ExamGroup[] = [];
-  showExamGroupManager: boolean = false;
+  showExamGroupManager: boolean = true;
   isLoadingApi: boolean = false;
   
   timeSlots: string[] = [
@@ -279,32 +279,30 @@ roomData: any[];
     return !cell.some(e => e.yearLevel === year);
   }
 
-  ngOnInit() {
-     this.updateDaysArray();
+ngOnInit() {
+  console.log('Component initializing...');
+  
+  this.updateDaysArray();
   this.activeDay = this.days[0];
   this.roomTimeData.days = [...this.days];
   this.courseGridData.days = [...this.days];
-  this.courseGridData.courses = [];
-  
   this.combineYearTerm();
-
-  // ✅ ADD: Load active configuration on init
-    this.loadActiveConfigurationFromCookies();
-    
-    // Load saved exam groups
-    this.loadSavedExamGroups();
   
-  // Load saved exam groups
+  // Clear only UI state, not saved data
+  this.selectedExamGroup = null;
+  this.showExamGroupManager = true;
+  
+  // Load saved groups FIRST (before any clearing)
+  console.log('Loading saved exam groups...');
   this.loadSavedExamGroups();
+  console.log('Loaded groups count:', this.savedExamGroups.length);
   
+  // Load active configuration
+  this.loadActiveConfigurationFromCookies();
   
-  // Auto-save every 30 seconds
-  setInterval(() => {
-    if (this.generatedSchedule.length > 0) {
-      this.autoSaveToLocalStorage();
-    }
-  }, 30000);
+  this.cdr.detectChanges();
 }
+
 
   updateDaysArray() {
     this.days = [];
@@ -552,55 +550,52 @@ get filteredSchedule(): ScheduledExam[] {
 
 // Toggle exam group manager visibility
 toggleExamGroupManager() {
-  this.showExamGroupManager = !this.showExamGroupManager;
-}
+    this.showExamGroupManager = !this.showExamGroupManager;
+    this.cdr.detectChanges();
+  }
 
 // Open date picker dialog
- openDatePickerDialog() {
-    console.log('Opening date picker with activeTerm:', this.activeTerm, this.activeConfigLabel);
-    
-    const dialogRef = this.dialog.open(DatePickerComponent, {
-      width: '800px',
-      data: { 
-        mode: 'add',
-        activeTermYear: this.activeTerm  // Pass the active term code
-      }
-    });
+openDatePickerDialog() {
+  console.log('Opening date picker with activeTerm:', this.activeTerm, this.activeConfigLabel);
+  
+  const dialogRef = this.dialog.open(DatePickerComponent, {
+    width: '800px',
+    data: { 
+      mode: 'add',
+      activeTermYear: this.activeTerm
+    }
+  });
 
-    dialogRef.afterClosed().subscribe(result => {
-      if (result && result.success) {
-        this.loadSavedExamGroups();
-        if (result.group) {
-          this.selectExamGroup(result.group);
-        }
-      }
-    });
-  }
+  dialogRef.afterClosed().subscribe(result => {
+    console.log('Dialog closed with result:', result);
+    
+    // ✅ ALWAYS reload groups when dialog closes
+    this.loadSavedExamGroups();
+    
+    // ✅ Force change detection to update UI
+    this.cdr.detectChanges();
+    
+    if (result && result.success) {
+      console.log('✅ Group saved successfully, table refreshed');
+    }
+  });
+}
 
 // Load saved exam groups from localStorage
-  loadSavedExamGroups() {
-    const stored = localStorage.getItem('examGroups');
-    this.savedExamGroups = stored ? JSON.parse(stored) : [];
-    
-    // Check if there's a selected group in shared data
-    const selected = this.sharedData.getSelectedExamGroup();
-    if (selected) {
-      this.selectedExamGroup = selected;
-      this.syncExamDatesFromGroup(selected);
-    } else {
-      // ✅ NEW: Auto-select group that matches active term
-      if (this.activeTerm && this.savedExamGroups.length > 0) {
-        const matchingGroup = this.savedExamGroups.find(g => 
-          g.termYear === this.activeTerm
-        );
-        
-        if (matchingGroup) {
-          console.log('✅ Auto-selecting matching group:', matchingGroup.name);
-          this.selectExamGroup(matchingGroup);
-        }
-      }
-    }
-  }
+loadSavedExamGroups() {
+  console.log('📂 Loading saved exam groups...');
+  
+  const stored = localStorage.getItem('examGroups');
+  console.log('Raw localStorage data:', stored);
+  
+  this.savedExamGroups = stored ? JSON.parse(stored) : [];
+  
+  console.log('✅ Loaded groups:', this.savedExamGroups.length);
+  console.log('Groups:', this.savedExamGroups);
+  
+  // ✅ Force Angular to detect changes
+  this.cdr.detectChanges();
+}
 
 loadActiveConfigurationFromCookies() {
   // Get year from cookie
@@ -644,27 +639,29 @@ loadActiveConfigurationFromCookies() {
 
 // Select an exam group
 selectExamGroup(group: ExamGroup) {
-  this.selectedExamGroup = group;
-  this.sharedData.setSelectedExamGroup(group);
-  this.sharedData.setExamDates(group.days);
-  
-  // ✅ Set the active term from the group
-  if (group.termYear) {
-    this.activeTerm = group.termYear;
-    this.sharedData.setActiveTerm(group.termYear);
-    this.activeConfigLabel = this.getTermYearLabel(group.termYear);
-    console.log('✅ Set active term from group:', group.termYear);
+    this.selectedExamGroup = group;
+    this.sharedData.setSelectedExamGroup(group);
+    this.sharedData.setExamDates(group.days);
+    
+    if (group.termYear) {
+      this.activeTerm = group.termYear;
+      this.sharedData.setActiveTerm(group.termYear);
+      this.activeConfigLabel = this.getTermYearLabel(group.termYear);
+    }
+    
+    this.syncExamDatesFromGroup(group);
+    
+    // Automatically load exam data when group is selected
+    this.loadExamDataWhenGroupSelected();
+    
+    // Collapse the table after selection to show clean view
+    this.showExamGroupManager = false;
+    
+    this.cdr.detectChanges();
+    
+    this.showToast('Group Selected', `"${group.name}" is now active`);
+    this.cookieService.set('lastSelectedExamGroup', JSON.stringify(group), 1);
   }
-  
-  this.syncExamDatesFromGroup(group);
-  
-  // ✅ NEW: Load exam data from API when Use button is clicked
-  this.loadExamDataWhenGroupSelected();
-  
-  this.cdr.detectChanges();
-  
-  this.showToast('Group Selected', `"${group.name}" is now active for ${this.activeConfigLabel}`, 'success');
-}
 
 
 loadExamDataWhenGroupSelected() {
@@ -836,6 +833,24 @@ deleteGroup(groupName: string) {
   });
 }
 
+
+clearExamGroupSelection() {
+    this.selectedExamGroup = null;
+    this.exams = [];
+    this.examDates = [];
+    this.generatedSchedule = [];
+    
+    // Clear from shared service
+    this.sharedData.setSelectedExamGroup(null);
+    this.sharedData.setExamDates([]);
+    
+    this.showExamGroupManager = true; // Show table again
+    this.cdr.detectChanges();
+    
+    this.showToast('Selection Cleared', 'No exam group selected');
+  }
+
+
 // Get term year label
 getTermYearLabel(termYearCode: string): string {
   if (!termYearCode) return 'Not Set';
@@ -953,6 +968,30 @@ onGeneratedDeptChange() {
   
   this.applyGeneratedFilters();
 }
+
+
+hasLastSavedSelection(): boolean {
+  return !!this.cookieService.get('lastSelectedExamGroup');
+}
+
+getLastSavedSelectionName(): string {
+  const saved = this.cookieService.get('lastSelectedExamGroup');
+  if (saved) {
+    const group = JSON.parse(saved);
+    return group.name;
+  }
+  return '';
+}
+
+resumeLastSelection() {
+  const saved = this.cookieService.get('lastSelectedExamGroup');
+  if (saved) {
+    const group = JSON.parse(saved);
+    this.selectExamGroup(group);
+  }
+}
+
+
 
 onGeneratedCourseChange() {
   console.log('Course changed:', this.selectedGeneratedCourse);
