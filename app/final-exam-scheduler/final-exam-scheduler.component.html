@@ -132,7 +132,7 @@
                   (click)="deleteGroup(group.name)" 
                   matTooltip="Delete this group"
                   [disabled]="isLoadingApi">
-                  <mat-icon>delete</mat-icon>
+                  <mat-icon style="color: red;">delete</mat-icon>
                 </button>
               </td>
             </tr>
@@ -176,7 +176,7 @@
   <!-- ✅ Warning when no group selected -->
   <div *ngIf="!selectedExamGroup" class="section" style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 20px; border-radius: 8px;">
     <div style="display: flex; align-items: center; gap: 15px;">
-      <mat-icon style="color: #f59e0b; font-size: 48px; width: 48px; height: 48px;">warning</mat-icon>
+      <mat-icon style="color: #f59e0b; font-size: 38px; width: 38px; height: 38px;">warning</mat-icon>
       <div>
         <h3 style="margin: 0 0 8px 0; color: #92400e;">No Exam Group Selected</h3>
         <p style="margin: 0; color: #78350f;">
@@ -188,14 +188,14 @@
 
   <!-- ✅ Generate button (Only shows when group is selected) -->
   <div *ngIf="selectedExamGroup" style="margin-top: 30px; text-align: center;">
-    <button 
-      class="btn btn-primary btn-lg" 
-      (click)="generateExamSchedule()" 
-      [disabled]="hasEmptyDates() || isLoadingApi"
-      style="padding: 15px 40px; font-size: 18px; font-weight: 600; border-radius: 8px; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); transition: all 0.3s;">
-      <mat-icon style="vertical-align: middle; margin-right: 8px;">auto_awesome</mat-icon>
-      {{ isLoadingApi ? 'Loading Exam Data...' : 'Generate Schedule' }}
-    </button>
+   <button 
+  class="btn btn-primary btn-lg" 
+  (click)="generateExamSchedule()" 
+  [disabled]="hasEmptyDates() || isLoadingApi"
+  style="padding: 12px 32px; font-size: 16px; font-weight: 500; border-radius: 8px; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); transition: all 0.3s;">
+  <mat-icon style="vertical-align: middle; margin-right: 8px; font-size: 20px;">auto_awesome</mat-icon>
+  {{ isLoadingApi ? 'Loading Exam Data...' : 'Generate Schedule' }}
+</button>
 
     <p style="margin-top: 15px; color: #6b7280; font-size: 14px;">
       This will load exam data from the API and automatically generate the schedule
@@ -415,7 +415,6 @@
             <th>Course</th>
             <th>Course Department</th>
             <th>Year Level</th>
-            <th>Instructor</th>
             <th>Subject Department</th>
             <th>Day</th>
             <th>Time</th>
@@ -449,7 +448,6 @@
 
             <td><span class="year-level-badge">{{ exam.YEAR_LEVEL }}</span></td>
 
-            <td>{{ exam.INSTRUCTOR }}</td>
 
             <td>{{ exam.DEPT }}</td>
 
@@ -482,7 +480,7 @@
                 </div>
 
                 <mat-form-field appearance="outline" class="edit-field">
-                  <mat-label>Choose Time Slot</mat-label>
+                  <mat-label>Choose Time Slot </mat-label>
                   <mat-select 
                     [(ngModel)]="editedExam.SLOT"
                     (ngModelChange)="onEditSlotChange()"
@@ -490,7 +488,7 @@
                     <mat-option value="">-- Select Time --</mat-option>
                     <mat-option *ngFor="let s of availableSlots" [value]="s">
                       <div class="time-option">
-                        <mat-icon class="time-icon">schedule</mat-icon>
+                        <mat-icon class="time-icon">schedule </mat-icon>
                         <span>{{ s }}</span>
                       </div>
                     </mat-option>
@@ -526,10 +524,10 @@
                     <mat-option *ngFor="let r of availableRooms" [value]="r">
                       <div class="room-option">
                         <mat-icon class="room-icon" [class.recommended]="getRoomRecommendation(editedExam, r)">
-                          {{ getRoomRecommendation(editedExam, r) ? 'star' : 'meeting_room' }}
+                          {{ getRoomRecommendation(editedExam, r) ? '' : 'meeting_room' }}
                         </mat-icon>
                         <span [class.recommended-text]="getRoomRecommendation(editedExam, r)">Room {{ r }}</span>
-                        <span class="room-badge" *ngIf="getRoomRecommendation(editedExam, r)">Dept Match</span>
+                        <span class="room-badge" *ngIf="getRoomRecommendation(editedExam, r)"> Dept Match</span>
                       </div>
                     </mat-option>
                   </mat-select>
@@ -540,7 +538,7 @@
                   </mat-hint>
                   <mat-hint *ngIf="editedExam.SLOT && availableRooms.length > 0" class="success-hint">
                     ✓ {{ availableRooms.length }} rooms available
-                    <span *ngIf="hasRecommendedRooms(editedExam)"> | ⭐ Department matches shown first</span>
+                    <span *ngIf="hasRecommendedRooms(editedExam)"> | Department matches shown first</span>
                   </mat-hint>
                 </mat-form-field>
               </div>
@@ -605,7 +603,7 @@
           Room Conflicts ({{ conflictDetails.roomConflicts.length }})
         </h3>
         <p class="conflict-description critical-text">
-          🚨 CRITICAL: Same room assigned to multiple exams at the same time
+          CRITICAL: Same room assigned to multiple exams at the same time
         </p>
         
         <div class="conflict-item" *ngFor="let conflict of conflictDetails.roomConflicts">
@@ -650,7 +648,7 @@
     <!-- Header -->
     <div class="sticky top-0 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white p-6 border-b">
       <div class="flex justify-between items-center">
-        <h2 class="text-2xl font-bold">📋 Unscheduled Exams</h2>
+        <h2 class="text-2xl font-bold">Unscheduled Exams</h2>
         <button 
           (click)="closeUnscheduledPanel()"
           class="text-2xl leading-none hover:text-yellow-100">
@@ -663,7 +661,7 @@
     <!-- Content -->
     <div class="p-6">
       <div *ngIf="unscheduledExams.length === 0" class="text-center py-8">
-        <p class="text-gray-500 text-lg">✅ No unscheduled exams</p>
+        <p class="text-gray-500 text-lg">No unscheduled exams</p>
       </div>
 
       <!-- Exam List -->
@@ -705,7 +703,7 @@
 
           <div class="flex gap-2">
             <button (click)="deleteUnscheduledExam(exam)" class="px-3 py-1 bg-red-500 text-white text-sm rounded">🗑️</button>
-            <button (click)="editUnscheduledExam(exam)" class="px-3 py-1 bg-blue-500 text-white text-sm rounded">✏️ Edit</button>
+            <button (click)="editUnscheduledExam(exam)" class="px-3 py-1 bg-blue-500 text-white text-sm rounded">Edit</button>
           </div>
         </div>
       </div>
@@ -776,11 +774,11 @@
     <div class="filter-section">
       <div class="form-row">
         <div class="form-group">
-          <label>Filter by Course</label>
+          <label>Filter by Program</label>
           <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Select Course</mat-label>
+            <mat-label>Select Program</mat-label>
             <mat-select [(ngModel)]="selectedCourseFilter" (ngModelChange)="onCourseFilterChange()">
-              <mat-option value="">All Courses</mat-option>
+              <mat-option value="">All Programs</mat-option>
               <mat-option *ngFor="let course of uniqueCourses" [value]="course">
                 {{ course }}
               </mat-option>
@@ -932,10 +930,10 @@
     <div class="legend">
       <h4>Department Colors:</h4>
       <div class="legend-items">
-        <span class="legend-item" style="background-color: #ef4444;">SACE</span>
-        <span class="legend-item" style="background-color: #facc15; color: #000;">SABH</span>
-        <span class="legend-item" style="background-color: #3b82f6;">SECAP</span>
-        <span class="legend-item" style="background-color: #22c55e;">SHAS</span>
+        <span class="legend-item" style="background-color: #d99594;">SACE</span>
+        <span class="legend-item" style="background-color: #FFFF00; color: #000;">SABH</span>
+        <span class="legend-item" style="background-color: #00b0f0;">SECAP</span>
+        <span class="legend-item" style="background-color: #92d050;">SHAS</span>
       </div>
     </div>
 
@@ -954,47 +952,18 @@
 <div *ngIf="currentStep === 'coursegrid'" class="card">
   <div class="card-header">
     <h2>Student Mapping</h2>
-    <!-- <button class="btnback" (click)="goToStep('summary')">⬅ Back</button> -->
   
-
-    <!-- <button 
-    (click)="showTBDRoomsReport()"
-    [disabled]="getTBDExamsCount() === 0"
-    class="btn btn-info"
-    style="display: flex; align-items: center; gap: 8px;">
-    <i class="fa fa-clipboard-list"></i>
-    TBD Rooms Report
-    <span *ngIf="getTBDExamsCount() > 0" 
-          class="badge badge-warning" 
-          style="background: #ef4444; margin-left: 5px;">
-      {{getTBDExamsCount()}}
-    </span>
-  </button> -->
-  
-  <!-- <button 
-    (click)="autoAssignTBDRooms()"
-    [disabled]="getTBDExamsCount() === 0"
-    class="btn btn-success"
-    style="display: flex; align-items: center; gap: 8px;">
-    <i class="fa fa-magic"></i>
-    Auto-Assign Rooms
-    <span *ngIf="getTBDExamsCount() > 0" 
-          class="badge" 
-          style="background: white; color: #16a34a; margin-left: 5px;">
-      {{getTBDExamsCount()}}
-    </span>
-  </button> -->
   </div>
 
   <!-- FILTERS -->
   <div class="filter-section">
     <div class="form-row">
       <div class="form-group">
-        <label>Filter by Course</label>
+        <label>Filter by Program</label>
         <mat-form-field appearance="outline" class="w-full">
-          <mat-label>Select Course</mat-label>
+          <mat-label>Select Programs</mat-label>
           <mat-select [(ngModel)]="selectedCourseFilter" (ngModelChange)="onCourseFilterChange()">
-            <mat-option value="">All Courses</mat-option>
+            <mat-option value="">All Programs</mat-option>
             <mat-option *ngFor="let course of uniqueCourses" [value]="course">
               {{ course }}
             </mat-option>
@@ -1151,6 +1120,7 @@
   <!-- MOVE EXAM POPUP -->
   <div *ngIf="movePopupVisible && moveExamData" class="move-popup">
     <h3>Move Exam: {{ moveExamData.DESCRIPTIVE_TITLE || moveExamData.title }}</h3>
+    <h4>Available Slots:</h4>
 
     <div *ngIf="safeSlots.length > 0; else noSlots">
       <button *ngFor="let s of safeSlots" (click)="applyMove(s.day, s.slot)">
@@ -1366,7 +1336,6 @@
           <th style="width: 150px; min-width: 150px; max-width: 150px;">Subject</th>
           <th style="width: 100px; min-width: 100px; max-width: 100px;">Course</th>
           <th style="width: 150px; min-width: 150px; max-width: 150px;">Program Dept</th>
-          <th style="width: 150px; min-width: 150px; max-width: 150px;">Instructor</th>
           <th style="width: 100px; min-width: 100px; max-width: 100px;">Subject Dept</th>
           <th style="width: 250px; min-width: 250px; max-width: 250px;">Assigned Proctor</th>
           <th style="width: 80px; min-width: 80px; max-width: 80px;">Match</th>
@@ -1789,7 +1758,7 @@
             "
             onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(59, 130, 246, 0.4)';"
             onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
-            📅 Schedule Manually
+            Schedule Manually
           </button>
           <button 
             (click)="removeUnscheduledExam(i)"
@@ -1902,7 +1871,7 @@
             margin-bottom: 8px;
             font-size: 13px;
           ">
-            🏛️ Select Room
+            Select Room
           </label>
           <select 
             [(ngModel)]="manualScheduleData.room"
@@ -1963,7 +1932,7 @@
             "
             onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(34, 197, 94, 0.4)';"
             onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
-            ✓ Save Schedule
+            Save Schedule
           </button>
           <button 
             (click)="cancelManualSchedule()"

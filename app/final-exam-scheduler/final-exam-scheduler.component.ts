@@ -647,69 +647,73 @@ loadActiveConfigurationFromCookies() {
 
 // Select an exam group with schedule check
 selectExamGroup(group: ExamGroup) {
-  console.log('=== Selecting Exam Group ===');
-  console.log('Group:', group.name);
-  console.log('Term:', group.termYear);
+  this.selectedExamGroup = group;
+  this.sharedData.setSelectedExamGroup(group);
+  this.sharedData.setExamDates(group.days);
   
-  // Check if a saved schedule exists
-  const hasSchedule = this.hasScheduleForGroup(group.name, group.termYear || '');
+  if (group.termYear) {
+    this.activeTerm = group.termYear;
+    this.sharedData.setActiveTerm(group.termYear);
+    this.activeConfigLabel = this.getTermYearLabel(group.termYear);
+  }
   
-  if (hasSchedule) {
-    console.log('✅ Found saved schedule for this group');
-    
-    // Show dialog with options
+  this.syncExamDatesFromGroup(group);
+  
+  // ✅ NEW: Check if saved schedule exists
+  const hasSavedSchedule = this.hasScheduleForGroup(group.name, group.termYear || '');
+  
+  if (hasSavedSchedule) {
+    // Show popup with options
     Swal.fire({
       title: 'Saved Schedule Found',
       html: `
         <div style="text-align: left; padding: 15px;">
-          <p style="margin-bottom: 15px;">
-            <strong>"${group.name}"</strong> has a saved schedule.
-          </p>
+          <p style="margin-bottom: 15px;">A saved schedule exists for <strong>"${group.name}"</strong>.</p>
           
-          <div style="background: #dbeafe; padding: 12px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #3b82f6;">
-            <p style="margin: 0; color: #1e40af; font-size: 14px;">
-              <strong>Term:</strong> ${this.getTermYearLabel(group.termYear || '')}
+          <div style="background: #f3f4f6; padding: 12px; border-radius: 8px; margin-bottom: 15px;">
+            <p style="margin: 0;"><strong>What would you like to do?</strong></p>
+          </div>
+          
+          <div style="margin: 10px 0;">
+            <p style="font-size: 14px; color: #6b7280;">
+              📋 <strong>View Schedule:</strong> Load the saved schedule
             </p>
           </div>
           
-          <p style="margin-bottom: 10px;"><strong>What would you like to do?</strong></p>
-          <ul style="margin: 0; padding-left: 20px; font-size: 14px; color: #6b7280;">
-            <li style="margin-bottom: 8px;">
-              <strong>View Schedule:</strong> Load and view the saved schedule
-            </li>
-            <li>
-              <strong>Re-generate:</strong> Create a new schedule (will replace the saved one)
-            </li>
-          </ul>
+          <div style="margin: 10px 0;">
+            <p style="font-size: 14px; color: #6b7280;">
+              🔄 <strong>Re-generate:</strong> Create a new schedule (will replace the saved one after saving)
+            </p>
+          </div>
         </div>
       `,
       type: 'question',
       showCancelButton: true,
       showCloseButton: true,
-      confirmButtonText: 'View Schedule',
-      cancelButtonText: 'Re-generate',
-      confirmButtonColor: '#10b981',
+      confirmButtonText: '📋 View Schedule',
+      cancelButtonText: '🔄 Re-generate',
+      confirmButtonColor: '#3b82f6',
       cancelButtonColor: '#f59e0b',
-      allowOutsideClick: false
+      allowOutsideClick: true,
+      reverseButtons: true
     }).then((result) => {
       if (result.value) {
-        // User chose "View Schedule"
-        console.log('User chose to view saved schedule');
+        // User clicked "View Schedule"
         this.loadScheduleForGroup(group);
       } else if (result.dismiss === Swal.DismissReason.cancel) {
-        // User chose "Re-generate"
-        console.log('🔄 User chose to re-generate schedule');
+        // User clicked "Re-generate"
         this.prepareForRegeneration(group);
       } else {
-        // User closed the dialog (X button or outside click)
-        console.log('❌ User cancelled selection');
+        // User closed the dialog (X button or clicked outside)
+        this.clearExamGroupSelection();
       }
     });
   } else {
-    // No saved schedule - proceed normally
-    console.log('ℹ️ No saved schedule found, proceeding with normal selection');
+    // No saved schedule - proceed with normal group selection
     this.proceedWithGroupSelection(group);
   }
+  
+  this.cdr.detectChanges();
 }
 
 
@@ -766,7 +770,7 @@ private loadScheduleForGroup(group: ExamGroup) {
     Swal.close();
     
     // Show success message
-   Swal.fire({
+Swal.fire({
   title: 'Schedule Loaded!',
   html: `
     <div style="text-align: left; padding: 15px;">
@@ -774,13 +778,11 @@ private loadScheduleForGroup(group: ExamGroup) {
       <p><strong>Term:</strong> ${this.getTermYearLabel(group.termYear || '')}</p>
       <p><strong>Exams:</strong> ${this.generatedSchedule.length}</p>
       <br>
-      <p style="color: #10b981;">✓ Schedule loaded successfully</p>
     </div>
   `,
   type: 'success',
   confirmButtonText: 'View Schedule',
   confirmButtonColor: '#10b981',
-  showLoaderOnConfirm: false, // ✅ ADD THIS LINE
   allowOutsideClick: true,
   showCloseButton: true
 }).then(() => {
@@ -803,6 +805,10 @@ private loadScheduleForGroup(group: ExamGroup) {
   }
 }
 
+
+
+
+// Prepare for regeneration (clear old data and load fresh)
 // Prepare for regeneration (clear old data and load fresh)
 private prepareForRegeneration(group: ExamGroup) {
   console.log('🔄 Preparing for regeneration');
@@ -826,15 +832,22 @@ private prepareForRegeneration(group: ExamGroup) {
     showCancelButton: true,
     confirmButtonText: 'Yes, Re-generate',
     cancelButtonText: 'Cancel',
-    confirmButtonColor: '#f59e0b'
+    confirmButtonColor: '#f59e0b',
+    showLoaderOnConfirm: false // ✅ Add this
   }).then((result) => {
     if (result.value) {
+      // ✅ Clear old schedule data
+      this.generatedSchedule = [];
+      this.exams = [];
+      this.rooms = [];
+      this.usedRoomsPerSlot = {};
+      
       // Proceed with normal group selection (will load fresh data from API)
       this.proceedWithGroupSelection(group);
       
       this.showToast(
         'Ready to Re-generate',
-        'Click "Generate Schedule" to create a new schedule',
+        'Loading exam data from API...',
         'success'
       );
     }
@@ -842,9 +855,11 @@ private prepareForRegeneration(group: ExamGroup) {
 }
 
 // Proceed with normal group selection (existing logic)
+// Proceed with normal group selection (existing logic)
 private proceedWithGroupSelection(group: ExamGroup) {
   console.log('✅ Proceeding with group selection:', group.name);
   
+  // Set the selected group
   this.selectedExamGroup = group;
   this.sharedData.setSelectedExamGroup(group);
   this.sharedData.setExamDates(group.days);
@@ -857,7 +872,7 @@ private proceedWithGroupSelection(group: ExamGroup) {
   
   this.syncExamDatesFromGroup(group);
   
-  // Automatically load exam data when group is selected
+  // ✅ CRITICAL: Automatically load exam data when group is selected
   this.loadExamDataWhenGroupSelected();
   
   // Collapse the table after selection to show clean view
@@ -876,20 +891,34 @@ loadExamDataWhenGroupSelected() {
   }
 
   this.isLoadingApi = true;
-  this.loadSwal();
+  
+  // Show loading with spinner (no buttons)
+  Swal.fire({
+    title: 'Loading Exam Data',
+    html: '<p style="margin-bottom: 15px;">Fetching exam data from API...</p>',
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+    showConfirmButton: false,
+    onOpen: function() {
+      Swal.showLoading();
+    }
+  });
 
   this.api.getCodeSummaryReport(this.activeTerm)
     .map((response: any) => response.json())
     .subscribe(
       res => {
         this.rawCodes = res.data;
+        
+        // ✅ Close loading dialog
         Swal.close();
+        
         this.isLoadingApi = false;
 
         const parsedExams: Exam[] = this.rawCodes.map((obj: any) => ({
-        code: obj.scheduleCode || obj.examCode || obj.codeNo || '', // Try different field names
-        version: obj.version || '',
-        subjectId: obj.subjectId || '',
+          code: obj.scheduleCode || obj.examCode || obj.codeNo || '',
+          version: obj.version || '',
+          subjectId: obj.subjectId || '',
           title: obj.subjectTitle || '',
           course: (obj.course || '').trim(),
           yearLevel: obj.yearLevel !== undefined && obj.yearLevel !== null ? obj.yearLevel : 1,
@@ -913,12 +942,15 @@ loadExamDataWhenGroupSelected() {
         console.log(`✅ Loaded ${this.exams.length} exams from API`);
         console.log(`📍 Available rooms: ${this.rooms.length}`);
         
+        // ✅ Show success message
 
         
         this.cdr.detectChanges();
       },
       err => {
+        // ✅ Close loading dialog on error
         Swal.close();
+        
         this.isLoadingApi = false;
         this.global.swalAlertError(err);
         this.cdr.detectChanges();
@@ -927,23 +959,23 @@ loadExamDataWhenGroupSelected() {
 }
 
 // Sync exam dates from selected group
- syncExamDatesFromGroup(group: ExamGroup) {
-    this.numberOfDays = group.days.length;
-    this.updateDaysArray();
-    
-    this.examDates = group.days.map(day => {
-      if (day.date) {
-        const d = new Date(day.date);
-        const year = d.getFullYear();
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const dayNum = String(d.getDate()).padStart(2, '0');
-        return `${year}-${month}-${dayNum}`;
-      }
-      return '';
-    });
-    
-    console.log('✅ Synced exam dates:', this.examDates);
-  }
+syncExamDatesFromGroup(group: ExamGroup) {
+  this.numberOfDays = group.days.length;
+  this.updateDaysArray();
+  
+  this.examDates = group.days.map(day => {
+    if (day.date) {
+      const d = new Date(day.date);
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const dayNum = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${dayNum}`;
+    }
+    return '';
+  });
+  
+  console.log('✅ Synced exam dates:', this.examDates);
+}
 
   // Check if a saved schedule exists for this group
 private hasScheduleForGroup(groupName: string, termYear: string): boolean {
@@ -954,50 +986,51 @@ private hasScheduleForGroup(groupName: string, termYear: string): boolean {
 
 // Edit exam group
 editGroup(group: ExamGroup) {
-    const dialogRef = this.dialog.open(DatePickerComponent, {
-      width: '800px',
-      data: { 
-        mode: 'edit', 
-        group: group,
-        activeTermYear: this.activeTerm  // Pass current active term
-      }
-    });
+  const dialogRef = this.dialog.open(DatePickerComponent, {
+    width: '800px',
+    data: { 
+      mode: 'edit', 
+      group: group,
+      activeTermYear: this.activeTerm
+    }
+  });
 
-    dialogRef.afterClosed().subscribe(result => {
-      if (result && result.success) {
-        this.loadSavedExamGroups();
-        
-        // If the edited group is currently selected, update it
-        if (this.selectedExamGroup && this.selectedExamGroup.name === group.name) {
-          this.selectExamGroup(result.group);
-        }
+  dialogRef.afterClosed().subscribe(result => {
+    if (result && result.success) {
+      this.loadSavedExamGroups();
+      
+      // If the edited group is currently selected, update it
+      if (this.selectedExamGroup && this.selectedExamGroup.name === group.name) {
+        this.selectExamGroup(result.group);
       }
-    });
-  }
+    }
+  });
+}
 
 // Duplicate exam group
- duplicateGroup(group: ExamGroup) {
-    const newName = prompt(`Enter name for duplicated group (original: "${group.name}"):`);
-    if (!newName || !newName.trim()) return;
-    
-    const duplicate: ExamGroup = {
-      name: newName.trim(),
-      days: JSON.parse(JSON.stringify(group.days)),
-      termYear: group.termYear
-    };
-    
-    const existingIndex = this.savedExamGroups.findIndex(g => g.name === duplicate.name);
-    if (existingIndex !== -1) {
-      if (!confirm(`"${duplicate.name}" already exists. Replace it?`)) return;
-      this.savedExamGroups[existingIndex] = duplicate;
-    } else {
-      this.savedExamGroups.push(duplicate);
-    }
-    
-    localStorage.setItem('examGroups', JSON.stringify(this.savedExamGroups));
-    this.loadSavedExamGroups();
-    this.showToast('Duplicated', `Created "${duplicate.name}"`, 'success');
+
+duplicateGroup(group: ExamGroup) {
+  const newName = prompt(`Enter name for duplicated group (original: "${group.name}"):`);
+  if (!newName || !newName.trim()) return;
+  
+  const duplicate: ExamGroup = {
+    name: newName.trim(),
+    days: JSON.parse(JSON.stringify(group.days)),
+    termYear: group.termYear
+  };
+  
+  const existingIndex = this.savedExamGroups.findIndex(g => g.name === duplicate.name);
+  if (existingIndex !== -1) {
+    if (!confirm(`"${duplicate.name}" already exists. Replace it?`)) return;
+    this.savedExamGroups[existingIndex] = duplicate;
+  } else {
+    this.savedExamGroups.push(duplicate);
   }
+  
+  localStorage.setItem('examGroups', JSON.stringify(this.savedExamGroups));
+  this.loadSavedExamGroups();
+  this.showToast('Duplicated', `Created "${duplicate.name}"`, 'success');
+}
 
 
 // Delete exam group
@@ -1016,7 +1049,8 @@ deleteGroup(groupName: string) {
     type: 'warning',
     showCancelButton: true,
     confirmButtonText: 'Yes, delete it',
-    cancelButtonText: 'Cancel'
+    cancelButtonText: 'Cancel',
+    showLoaderOnConfirm: false
   }).then((result) => {
     if (result.value) {
       const isSelected = this.selectedExamGroup && this.selectedExamGroup.name === groupName;
@@ -1043,20 +1077,20 @@ deleteGroup(groupName: string) {
 
 
 clearExamGroupSelection() {
-    this.selectedExamGroup = null;
-    this.exams = [];
-    this.examDates = [];
-    this.generatedSchedule = [];
-    
-    // Clear from shared service
-    this.sharedData.setSelectedExamGroup(null);
-    this.sharedData.setExamDates([]);
-    
-    this.showExamGroupManager = true; // Show table again
-    this.cdr.detectChanges();
-    
-    this.showToast('Selection Cleared', 'No exam group selected');
-  }
+  this.selectedExamGroup = null;
+  this.exams = [];
+  this.examDates = [];
+  this.generatedSchedule = [];
+  
+  // Clear from shared service
+  this.sharedData.setSelectedExamGroup(null);
+  this.sharedData.setExamDates([]);
+  
+  this.showExamGroupManager = true;
+  this.cdr.detectChanges();
+  
+  this.showToast('Selection Cleared', 'No exam group selected');
+}
 
 
 // Get term year label
@@ -1260,7 +1294,17 @@ loadExamData() {
     return;
   }
 
-  this.loadSwal();
+  // Show loading with spinner
+  Swal.fire({
+    title: 'Loading Exam Data',
+    html: '<p style="margin-bottom: 15px;">Fetching exam data from API...</p>',
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+    showConfirmButton: false,
+    onOpen: function() {
+      Swal.showLoading();
+    }
+  });
 
   this.api.getCodeSummaryReport(this.activeTerm)
     .map((response: any) => response.json())
@@ -1319,16 +1363,17 @@ loadExamData() {
 
 
   loadSwal() {
-    Swal.fire({
-      title: 'Loading',
-      text: 'Fetching exam data...',
-      allowOutsideClick: false,
-      allowEscapeKey: false,
-      onOpen: function () {
-        Swal.showLoading();
-      }
-    });
-  }
+  Swal.fire({
+    title: 'Loading',
+    text: 'Fetching exam data...',
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+    showConfirmButton: false, // ✅ Hide the OK button
+    onOpen: function () {
+      Swal.showLoading();
+    }
+  });
+}
 
   showToast(title: string, description: string, variant: string = 'success') {
     this.toast = { title, description, variant };
@@ -1513,7 +1558,7 @@ getRoomRecommendation(exam: ScheduledExam, room: string): string {
   else if (deptCode === 'SHAS') preferredPrefixes = ['M', 'L', 'N'];
 
   if (preferredPrefixes.length > 0 && preferredPrefixes.some(p => room.startsWith(p))) {
-    return '⭐ Recommended for ' + deptCode;
+    return 'Recommended for ' + deptCode;
   }
   return '';
 }
@@ -1661,7 +1706,7 @@ saveScheduleToLocalStorage() {
       html: `
         <div style="text-align: left; padding: 15px;">
           <p>Could not save the schedule to local storage.</p>
-          <p style="margin-top: 10px; color: #ef4444; font-size: 14px;">
+          <p style="margin-top: 10px; color: #d99594; font-size: 14px;">
             <strong>Error:</strong> ${error.message || 'Unknown error'}
           </p>
         </div>
@@ -1677,7 +1722,7 @@ private handleQuotaExceeded(saveData: any, sizeInKB: number) {
   console.error('❌ Storage quota exceeded');
   
   Swal.fire({
-    title: '💾 Storage Quota Exceeded',
+    title: 'Storage Quota Exceeded',
     html: `
       <div style="text-align: left; padding: 15px;">
         <p style="margin-bottom: 15px;">
@@ -1706,8 +1751,8 @@ private handleQuotaExceeded(saveData: any, sizeInKB: number) {
     `,
     type: 'warning',
     showCancelButton: true,
-    confirmButtonText: '📥 Download as File',
-    cancelButtonText: '🗑️ Clear Old & Retry',
+    confirmButtonText: 'Download as File',
+    cancelButtonText: 'Clear Old & Retry',
     confirmButtonColor: '#3b82f6',
     cancelButtonColor: '#f59e0b'
   }).then((result) => {
@@ -1998,54 +2043,7 @@ getFreeRoomForMultiSlot(exam: Exam, day: string, slots: string[], roomsList: str
 }
 
 
-  // NEW: Detect proctor conflicts
-  // detectProctorConflicts() {
-  //   this.conflictingExams = [];
-  //   this.availableProctors.clear();
-
-  //   // Group exams by day and slot
-  //   const examsByDaySlot: { [key: string]: ScheduledExam[] } = {};
-    
-  //   this.generatedSchedule.forEach(exam => {
-  //     const key = `${exam.DAY}|${exam.SLOT}`;
-  //     if (!examsByDaySlot[key]) {
-  //       examsByDaySlot[key] = [];
-  //     }
-  //     examsByDaySlot[key].push(exam);
-  //   });
-
-  //   // Check for conflicts (instructor teaching multiple classes at same time)
-  //   Object.values(examsByDaySlot).forEach(examsInSlot => {
-  //     const instructorCount: { [instructor: string]: number } = {};
-      
-  //     examsInSlot.forEach(exam => {
-  //       const instructor = exam.INSTRUCTOR.toUpperCase().trim();
-  //       instructorCount[instructor] = (instructorCount[instructor] || 0) + 1;
-  //     });
-
-  //     // Mark exams with conflicts
-  //     examsInSlot.forEach(exam => {
-  //       const instructor = exam.INSTRUCTOR.toUpperCase().trim();
-  //       if (instructorCount[instructor] > 1) {
-  //         exam.HAS_CONFLICT = true;
-  //         this.conflictingExams.push(exam);
-          
-  //         // Find available substitute proctors
-  //         this.findAvailableProctors(exam);
-  //       } else {
-  //         exam.HAS_CONFLICT = false;
-  //       }
-  //     });
-  //   });
-
-  //   if (this.conflictingExams.length > 0) {
-  //     this.showToast(
-  //       'Proctor Conflicts Detected',
-  //       `${this.conflictingExams.length} exams have proctor conflicts. Please assign substitute proctors.`,
-  //       'warning'
-  //     );
-  //   }
-  // }
+ 
 // NEW: Detect only PROCTOR conflicts (for Proctor Assignment view)
 detectProctorConflicts() {
   console.log('🔍 Detecting proctor conflicts...');
@@ -2578,20 +2576,20 @@ forceProctorUIRefresh() {
 
   getDeptColor(dept: string): string {
     const colors: { [key: string]: string } = {
-      'SACE': '#ef4444',
-      'SABH': '#facc15',
-      'SECAP': '#3b82f6',
-      'SHAS': '#22c55e'
+      'SACE': '#d99594',
+      'SABH': '#FFFF00',
+      'SECAP': '#00b0f0',
+      'SHAS': '#92d050'
     };
     return dept ? colors[dept.toUpperCase()] || '#6b7280' : '#6b7280';
   }
 
   getDeptGradient(dept: string): string {
     const gradients: { [key: string]: string } = {
-      'SACE': 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-      'SABH': 'linear-gradient(135deg, #facc15 0%, #eab308 100%)',
-      'SECAP': 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-      'SHAS': 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)'
+      'SACE': 'linear-gradient(135deg, #d99594 0%, #dc2626 100%)',
+      'SABH': 'linear-gradient(135deg, #FFFF00 0%, #eab308 100%)',
+      'SECAP': 'linear-gradient(135deg, #00b0f0 0%, #2563eb 100%)',
+      'SHAS': 'linear-gradient(135deg, #92d050 0%, #16a34a 100%)'
     };
     return dept ? gradients[dept.toUpperCase()] || 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)' : 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)';
   }
@@ -3240,7 +3238,7 @@ loadFromLocalStorage() {
             </ul>
           </div>
           
-          <p style="margin-top: 15px; color: #ef4444; font-size: 13px;">
+          <p style="margin-top: 15px; color: #d99594; font-size: 13px;">
             ⚠️ This will replace your current schedule (if any).
           </p>
         </div>
@@ -3970,13 +3968,13 @@ assignProc(exam: ScheduledExam, proctor: string) {
       html: `
         <p>${proctor} is already proctoring:</p>
         <p style="margin-top: 10px;"><strong>${conflict.CODE}</strong> - ${conflict.DESCRIPTIVE_TITLE}</p>
-        <p style="margin-top: 15px; color: #ef4444;">Assign anyway?</p>
+        <p style="margin-top: 15px; color: #d99594;">Assign anyway?</p>
       `,
       type: 'warning',
       showCancelButton: true,
       confirmButtonText: 'Yes, assign anyway',
       cancelButtonText: 'Cancel',
-      confirmButtonColor: '#ef4444'
+      confirmButtonColor: '#d99594'
     }).then((result) => {
       if (result.value) {
         exam.PROCTOR = proctor;
@@ -4024,7 +4022,7 @@ removeExamFromGrid(exam: any, day: string, slot: string) {
         <p><strong>Day:</strong> ${day}</p>
         <p><strong>Time:</strong> ${slot}</p>
       </div>
-      <p style="color: #ef4444; margin-top: 15px;">Remove this exam?</p>
+      <p style="color: #d99594; margin-top: 15px;">Remove this exam?</p>
     `,
     type: 'warning',
     showCancelButton: true,
@@ -4475,7 +4473,7 @@ if (!archValid) {
       '<li>Building C (Primary)</li>' +
       '<li>Building K (Fallback only)</li>' +
       '</ul>' +
-      '<p style="margin-top: 10px; color: #ef4444;">Check console for details.</p>' +
+      '<p style="margin-top: 10px; color: #d99594;">Check console for details.</p>' +
       '</div>',
     type: 'error',
     confirmButtonText: 'OK'
@@ -5801,7 +5799,7 @@ showMoveOptions(exam: ScheduledExam, currentDay: string, currentSlot: string) {
   // Show move popup
   this.movePopupVisible = true;
 
-  this.showToast('Move Mode', `Moving ${groupExams.length} exam(s). Select a new slot.`);
+
 }
 
 // 7. Calculate safe slots for moving
@@ -6852,13 +6850,13 @@ assignProctorSmart(exam: ScheduledExam, proctor: string) {
       html: `
         <div style="text-align: left; padding: 15px;">
           <p style="margin-bottom: 15px;"><strong>${proctor}</strong> is already proctoring:</p>
-          <div style="background: #fee2e2; padding: 12px; border-radius: 8px; border-left: 4px solid #ef4444;">
+          <div style="background: #fee2e2; padding: 12px; border-radius: 8px; border-left: 4px solid #d99594;">
             <p style="margin: 0;"><strong>${conflict.CODE}</strong> - ${conflict.DESCRIPTIVE_TITLE}</p>
             <p style="margin: 8px 0 0 0; font-size: 14px; color: #6b7280;">
               ${conflict.COURSE} | Room ${conflict.ROOM}
             </p>
           </div>
-          <p style="margin-top: 15px; color: #ef4444; font-weight: 600;">Assign anyway?</p>
+          <p style="margin-top: 15px; color: #d99594; font-weight: 600;">Assign anyway?</p>
         </div>
       `,
       showCancelButton: true,
