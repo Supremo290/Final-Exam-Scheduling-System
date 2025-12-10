@@ -1857,7 +1857,7 @@ saveScheduleToLocalStorage() {
       this.isSaving = false;
       
       Swal.fire({
-        title: '✅ Schedule Saved!',
+        title: 'Schedule Saved!',
         html: `
           <div style="text-align: left; padding: 15px;">
             <p><strong>Your exam schedule has been saved successfully.</strong></p>
