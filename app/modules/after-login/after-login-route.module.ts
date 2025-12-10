@@ -12,6 +12,7 @@ import { RoomMappingComponent } from '../../room-mapping/room-mapping.component'
 import { FinalOutputComponent } from '../../final-output/final-output.component';
 import { ExamSchedulerComponent } from '../../exam-scheduler/exam-scheduler.component';
 import { FinalExamSchedulerComponent } from '../../final-exam-scheduler/final-exam-scheduler.component';
+import { CodeSummaryComponent } from '../../code-summary/code-summary.component';
 
 const routes: Routes = [
   { path: 'home', component: HomeComponent, outlet: 'div' },
@@ -24,7 +25,8 @@ const routes: Routes = [
   { path: 'room-mapping', component: RoomMappingComponent, outlet: 'div' },
   { path: 'final-output', component: FinalOutputComponent, outlet: 'div' },
   { path: 'exam-scheduler', component: ExamSchedulerComponent, outlet: 'div' },
-  { path: 'final', component: FinalExamSchedulerComponent, outlet: 'div' }
+  { path: 'final', component: FinalExamSchedulerComponent, outlet: 'div' },
+  { path: 'code', component: CodeSummaryComponent, outlet: 'div' }
 ];
 
 @NgModule({

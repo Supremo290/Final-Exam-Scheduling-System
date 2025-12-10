@@ -26,6 +26,7 @@ import { UniquePipe } from '../../exam-scheduler/unique.pipe';
 import { FormsModule } from '@angular/forms';
 import { ScrollingModule } from '@angular/cdk/scrolling'; 
 import { FinalExamSchedulerComponent } from '../../final-exam-scheduler/final-exam-scheduler.component';
+import { CodeSummary, CodeSummaryComponent } from '../../code-summary/code-summary.component';
 
 @NgModule({
   imports: [
@@ -59,7 +60,8 @@ import { FinalExamSchedulerComponent } from '../../final-exam-scheduler/final-ex
     FinalOutputComponent,
     ExamSchedulerComponent,
     UniquePipe,
-    FinalExamSchedulerComponent
+    FinalExamSchedulerComponent,
+    CodeSummaryComponent
   ],
   entryComponents: [
     DatePickerComponent

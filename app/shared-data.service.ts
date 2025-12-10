@@ -31,7 +31,8 @@ export class SharedDataService {
   private roomMappingKey = 'roomAssignments';
   private selectedExamGroupKey = 'selectedExamGroup';
   private activeTermKey = 'activeTerm'; // ✅ NEW: Store active term
-    private roomSummaryKey = 'roomSummary';
+  private roomSummaryKey = 'roomSummary';
+  private activeTermSubject = new BehaviorSubject<string>('');
 
   // Live data streams
   private examDatesSource = new BehaviorSubject<any[]>(this.loadFromStorage(this.examDatesKey) || []);
@@ -92,17 +93,17 @@ export class SharedDataService {
   // 2️⃣ Active Term (NEW)
   // --------------------
   setActiveTerm(term: string) {
-    this.saveToStorage(this.activeTermKey, term);
-    this.activeTermSource.next(term);
+    this.activeTermSubject.next(term);
+    localStorage.setItem('activeTerm', term);
   }
 
-  getActiveTerm(): string | null {
-    return this.loadFromStorage(this.activeTermKey);
+   getActiveTerm(): string {
+    return this.activeTermSubject.value;
   }
 
-  clearActiveTerm() {
-    localStorage.removeItem(this.activeTermKey);
-    this.activeTermSource.next(null);
+   clearActiveTerm() {
+    this.activeTermSubject.next('');
+    localStorage.removeItem('activeTerm');
   }
 
   // --------------------
@@ -191,10 +192,9 @@ export class SharedDataService {
     return this.loadFromStorage(this.selectedExamGroupKey) || this.selectedExamGroupSource.value;
   }
 
-  clearSelectedExamGroup() {
-    localStorage.removeItem(this.selectedExamGroupKey);
-    this.selectedExamGroupSource.next(null);
-  }
+ clearSelectedExamGroup() {
+  localStorage.removeItem('selectedExamGroup');
+}
 
   // --------------------
   // 7️⃣ Clear All Data

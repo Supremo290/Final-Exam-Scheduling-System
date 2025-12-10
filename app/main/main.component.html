@@ -69,10 +69,6 @@
             [routerLink]="['../main',{outlets:{div:'hello-world'}}]" mat-button>
             <i class="material-icons iconsize">star</i> Hello-World
           </a> -->
-          <a *ngIf="global.checkaccess(':ExaminationSchedule:ExaminationScheduleGet')"
-            [routerLink]="['../main',{outlets:{div:'final'}}]" mat-button>
-            <i class="material-icons iconsize">assignment</i> Final Exam Scheduler
-          </a>
           <!-- <a *ngIf="global.checkaccess(':ExaminationSchedule:ExaminationScheduleGet')"
             [routerLink]="['../main',{outlets:{div:'student-mapping'}}]" mat-button>
             <i class="material-icons iconsize">assignment</i> Student Mapping
@@ -88,6 +84,14 @@
           <a *ngIf="global.checkaccess(':ExaminationSchedule:ExaminationScheduleGet')"
             [routerLink]="['../main',{outlets:{div:'exam-scheduler'}}]" mat-button>
             <i class="material-icons iconsize">event</i>Exam Scheduler
+          </a>
+          <a *ngIf="global.checkaccess(':ExaminationSchedule:ExaminationScheduleGet')"
+            [routerLink]="['../main',{outlets:{div:'final'}}]" mat-button>
+            <i class="material-icons iconsize">assignment</i> Final Exam Scheduler
+          </a>
+          <a *ngIf="global.checkaccess(':ExaminationSchedule:ExaminationScheduleGet')"
+            [routerLink]="['../main',{outlets:{div:'code'}}]" mat-button>
+            <i class="material-icons iconsize">assignment</i>Code Summary
           </a>
         </mat-expansion-panel>
 

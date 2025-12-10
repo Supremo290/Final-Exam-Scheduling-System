@@ -682,9 +682,9 @@ loadExamDataWhenGroupSelected() {
         this.isLoadingApi = false;
 
         const parsedExams: Exam[] = this.rawCodes.map((obj: any) => ({
-          code: obj.codeNo || '',
-          version: obj.version || '',
-          subjectId: obj.subjectId || '',
+        code: obj.scheduleCode || obj.examCode || obj.codeNo || '', // Try different field names
+        version: obj.version || '',
+        subjectId: obj.subjectId || '',
           title: obj.subjectTitle || '',
           course: (obj.course || '').trim(),
           yearLevel: obj.yearLevel !== undefined && obj.yearLevel !== null ? obj.yearLevel : 1,
@@ -1467,13 +1467,7 @@ detectProctorConflicts() {
 
   console.log(`\n📊 Proctor Conflicts: ${totalProctorConflicts}`);
 
-  if (totalProctorConflicts > 0) {
-    this.showToast(
-      'Proctor Conflicts Detected',
-      `${totalProctorConflicts} proctor conflict(s) found.`,
-      'warning'
-    );
-  }
+
 }
 // NEW: Detect only ROOM conflicts (for Generated Schedule view)
 detectScheduleConflicts() {
@@ -3710,7 +3704,7 @@ console.log('\n📊 FINAL DISTRIBUTION:');
     console.log('  ' + day + ': ' + count + ' exam slots (' + percentage + '%)');
   });
   
-  this.detectUnscheduledExams();
+
 
   this.unscheduledExams = eligibleExams.filter(function(e) {
     return !this.generatedSchedule.some(function(s) {
@@ -3729,7 +3723,7 @@ console.log('\n📊 FINAL DISTRIBUTION:');
   
   const coveragePercent = ((eligibleExams.length - this.unscheduledExams.length) / eligibleExams.length * 100).toFixed(1);
   const successMessage = '<div style="text-align: left; padding: 15px;">' +
-    '<p style="margin-bottom: 15px;"><strong>✅ Schedule Generated Successfully!</strong></p>' +
+    '<p style="margin-bottom: 15px;"><strong>Schedule Generated Successfully!</strong></p>' +
     '<ul style="margin: 10px 0; padding-left: 20px;">' +
     '<li><strong>Total Scheduled:</strong> ' + schedule.length + ' exam slots</li>' +
     '<li><strong>Unique Exams:</strong> ' + (eligibleExams.length - this.unscheduledExams.length) + ' / ' + eligibleExams.length + '</li>' +
@@ -3738,7 +3732,7 @@ console.log('\n📊 FINAL DISTRIBUTION:');
     '</ul>' +
     (this.unscheduledExams.length > 0 ? 
       '<p style="margin-top: 15px; color: #f59e0b;">⚠️ ' + this.unscheduledExams.length + ' exam(s) could not be scheduled.</p>' 
-      : '<p style="margin-top: 15px; color: #10b981;">✅ 100% scheduling coverage achieved!</p>') +
+      : '<p style="margin-top: 15px; color: #10b981;">100% scheduling coverage achieved!</p>') +
     '</div>';
   
   Swal.fire({
@@ -4776,18 +4770,6 @@ validateScheduleConstraints(schedule: ScheduledExam[]) {
   } else {
     console.warn(`\n⚠️ VIOLATION: ${violations.consecutive.length} consecutive exam pairs found`);
   }
-  
-  // Show summary
-  const totalViolations = violations.consecutive.length + violations.lastDayAfternoon.length;
-  if (totalViolations > 0) {
-    this.showToast(
-      'Schedule Constraints',
-      `${totalViolations} constraint violation(s) detected. Check console for details.`,
-      'warning'
-    );
-  } else {
-    console.log('\n✅✅✅ ALL CONSTRAINTS SATISFIED! ✅✅✅');
-  }
 }
 
 
@@ -4845,21 +4827,6 @@ private getMorningSlots(allSlots: string[]): string[] {
 }
 
 
-detectUnscheduledExams() {
-  const scheduledCodes = new Set(this.generatedSchedule.map(e => e.CODE));
-  this.unscheduledExams = this.exams.filter(e => !scheduledCodes.has(e.code));
-
-  if (this.unscheduledExams.length > 0) {
-    console.warn('⚠️ Unscheduled exams:', this.unscheduledExams);
-    this.showToast(
-      'Warning',
-      `${this.unscheduledExams.length} exam(s) could not be scheduled.`,
-      'warning'
-    );
-  } else {
-    console.log('✅ All exams scheduled');
-  }
-}
 
 
 // NEW: Get room that's free in ALL slots AND use same room (for 6+ unit exams)
@@ -5383,22 +5350,22 @@ toggleUnscheduledPanel() {
 }
 
 
-openUnscheduledPanel() {
-  console.log('🔓 openUnscheduledPanel called');
+// openUnscheduledPanel() {
+//   console.log('🔓 openUnscheduledPanel called');
 
-  const count = this.unscheduledExams ? this.unscheduledExams.length : 0;
-  console.log('Unscheduled exams count:', count);
+//   const count = this.unscheduledExams ? this.unscheduledExams.length : 0;
+//   console.log('Unscheduled exams count:', count);
 
-   if (!this.unscheduledExams || this.unscheduledExams.length === 0) {
-    alert('✅ No unscheduled exams'); // popup
-    return;
-  }
+//    if (!this.unscheduledExams || this.unscheduledExams.length === 0) {
+//     alert('✅ No unscheduled exams'); // popup
+//     return;
+//   }
 
-  this.showUnscheduledPanel = true;
-    this.cdr.detectChanges(); // <- force Angular to refresh the template
+//   this.showUnscheduledPanel = true;
+//     this.cdr.detectChanges(); // <- force Angular to refresh the template
 
-  console.log('✅ Panel opened, showUnscheduledPanel =', this.showUnscheduledPanel);
-}
+//   console.log('✅ Panel opened, showUnscheduledPanel =', this.showUnscheduledPanel);
+// }
 
 
 
