@@ -292,7 +292,7 @@
         </div>
 
         
-    <button 
+    <!-- <button 
     (click)="showTBDRoomsReport()"
     [disabled]="getTBDExamsCount() === 0"
     class="btn btn-info"
@@ -304,24 +304,19 @@
           style="background: #ef4444; margin-left: 5px;">
       {{getTBDExamsCount()}}
     </span>
-  </button>
+  </button> -->
   
-  <button 
-    (click)="autoAssignTBDRooms()"
-    [disabled]="getTBDExamsCount() === 0"
-    class="btn btn-success"
-    style="display: flex; align-items: center; gap: 8px;">
-    <i class="fa fa-magic"></i>
-    Auto-Assign Rooms
-    <span *ngIf="getTBDExamsCount() > 0" 
-          class="badge" 
-          style="background: white; color: #16a34a; margin-left: 5px;">
-      {{getTBDExamsCount()}}
-    </span>
-  </button>
+       <button 
+          mat-raised-button 
+          color="accent"
+          (click)="saveScheduleToLocalStorage()" 
+          style="padding: 5px 10px; font-size: 16px;">
+          <mat-icon>save</mat-icon>
+          Save Schedule
+        </button>
 
   <button class="btn btn-outline" (click)="downloadScheduleCSV()">
-              💾 Download CSV
+              Download CSV
             </button>
     </div>
 
@@ -331,7 +326,7 @@
     <div class="enhanced-filter-section">
         <div class="filter-row">
             <mat-form-field appearance="outline" class="search-field-wide">
-                <mat-label>🔍 Search exams...</mat-label>
+                <mat-label>Search exams...</mat-label>
                 <input 
                     matInput 
                     [(ngModel)]="searchQuery" 
@@ -964,7 +959,7 @@
     <!-- <button class="btnback" (click)="goToStep('summary')">⬅ Back</button> -->
   
 
-    <button 
+    <!-- <button 
     (click)="showTBDRoomsReport()"
     [disabled]="getTBDExamsCount() === 0"
     class="btn btn-info"
@@ -976,9 +971,9 @@
           style="background: #ef4444; margin-left: 5px;">
       {{getTBDExamsCount()}}
     </span>
-  </button>
+  </button> -->
   
-  <button 
+  <!-- <button 
     (click)="autoAssignTBDRooms()"
     [disabled]="getTBDExamsCount() === 0"
     class="btn btn-success"
@@ -990,7 +985,7 @@
           style="background: white; color: #16a34a; margin-left: 5px;">
       {{getTBDExamsCount()}}
     </span>
-  </button>
+  </button> -->
   </div>
 
   <!-- FILTERS -->
@@ -1205,10 +1200,10 @@
       <span class="badge" *ngIf="getTotalConflicts() > 0">{{ getTotalConflicts() }}</span>
     </button>
 
-     <button class="btn btn-success" (click)="autoAssignAllProctors()">
+     <!-- <button class="btn btn-success" (click)="autoAssignAllProctors()">
       <mat-icon>auto_fix_high</mat-icon>
       Auto-Assign All Proctors
-    </button>
+    </button> -->
 
 
     </div>

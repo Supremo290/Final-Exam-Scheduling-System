@@ -118,6 +118,8 @@ export class FinalExamSchedulerComponent implements OnInit {
   
   editingRow: number | null = null;
   editedExam: ScheduledExam | null = null;
+   roomCapacities: Map<string, number> = new Map();
+   subjectTypes: Map<string, 'genEd' | 'major'> = new Map();
   
   availableSlots: string[] = [];
   availableRooms: string[] = [];
@@ -149,6 +151,8 @@ export class FinalExamSchedulerComponent implements OnInit {
   days: string[] = ['Day 1', 'Day 2', 'Day 3'];
   activeDay: string = 'Day 1';
   toast: ToastMessage | null = null;
+  lastSavedTime: Date | null = null;
+isSaving: boolean = false;
   
   searchQuery: string = '';
   selectedCourseFilter: string = '';
@@ -301,6 +305,10 @@ ngOnInit() {
   this.loadActiveConfigurationFromCookies();
   
   this.cdr.detectChanges();
+   const savedTime = localStorage.getItem('lastSavedTime');
+  if (savedTime) {
+    this.lastSavedTime = new Date(savedTime);
+  }
 }
 
 
@@ -637,8 +645,109 @@ loadActiveConfigurationFromCookies() {
 }
 
 
-// Select an exam group
+// Select an exam group with schedule check
 selectExamGroup(group: ExamGroup) {
+  console.log('=== Selecting Exam Group ===');
+  console.log('Group:', group.name);
+  console.log('Term:', group.termYear);
+  
+  // Check if a saved schedule exists
+  const hasSchedule = this.hasScheduleForGroup(group.name, group.termYear || '');
+  
+  if (hasSchedule) {
+    console.log('✅ Found saved schedule for this group');
+    
+    // Show dialog with options
+    Swal.fire({
+      title: 'Saved Schedule Found',
+      html: `
+        <div style="text-align: left; padding: 15px;">
+          <p style="margin-bottom: 15px;">
+            <strong>"${group.name}"</strong> has a saved schedule.
+          </p>
+          
+          <div style="background: #dbeafe; padding: 12px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #3b82f6;">
+            <p style="margin: 0; color: #1e40af; font-size: 14px;">
+              <strong>📋 Term:</strong> ${this.getTermYearLabel(group.termYear || '')}
+            </p>
+          </div>
+          
+          <p style="margin-bottom: 10px;"><strong>What would you like to do?</strong></p>
+          <ul style="margin: 0; padding-left: 20px; font-size: 14px; color: #6b7280;">
+            <li style="margin-bottom: 8px;">
+              <strong>View Schedule:</strong> Load and view the saved schedule
+            </li>
+            <li>
+              <strong>Re-generate:</strong> Create a new schedule (will replace the saved one)
+            </li>
+          </ul>
+        </div>
+      `,
+      type: 'question',
+      showCancelButton: true,
+      showCloseButton: true,
+      confirmButtonText: '👁️ View Schedule',
+      cancelButtonText: '🔄 Re-generate',
+      confirmButtonColor: '#10b981',
+      cancelButtonColor: '#f59e0b',
+      allowOutsideClick: false
+    }).then((result) => {
+      if (result.value) {
+        // User chose "View Schedule"
+        console.log('📋 User chose to view saved schedule');
+        this.loadScheduleForGroup(group);
+      } else if (result.dismiss === Swal.DismissReason.cancel) {
+        // User chose "Re-generate"
+        console.log('🔄 User chose to re-generate schedule');
+        this.prepareForRegeneration(group);
+      } else {
+        // User closed the dialog (X button or outside click)
+        console.log('❌ User cancelled selection');
+      }
+    });
+  } else {
+    // No saved schedule - proceed normally
+    console.log('ℹ️ No saved schedule found, proceeding with normal selection');
+    this.proceedWithGroupSelection(group);
+  }
+}
+
+
+// Load saved schedule for a group
+private loadScheduleForGroup(group: ExamGroup) {
+  console.log('📂 Loading saved schedule for:', group.name);
+  
+  // Show loading
+  Swal.fire({
+    title: 'Loading Schedule',
+    text: 'Please wait...',
+    allowOutsideClick: false,
+    onOpen: () => {
+      Swal.showLoading();
+    }
+  });
+  
+  try {
+    const key = `examSchedule_${group.name}_${group.termYear}`;
+    const saved = localStorage.getItem(key);
+    
+    if (!saved) {
+      Swal.close();
+      Swal.fire({
+        title: 'Error',
+        text: 'Could not load saved schedule. It may have been deleted.',
+        type: 'error',
+        confirmButtonText: 'OK'
+      });
+      return;
+    }
+    
+    const parsed = JSON.parse(saved);
+    
+    // Load the data
+    this.loadScheduleData(parsed);
+    
+    // Set the selected group
     this.selectedExamGroup = group;
     this.sharedData.setSelectedExamGroup(group);
     this.sharedData.setExamDates(group.days);
@@ -651,18 +760,111 @@ selectExamGroup(group: ExamGroup) {
     
     this.syncExamDatesFromGroup(group);
     
-    // Automatically load exam data when group is selected
-    this.loadExamDataWhenGroupSelected();
-    
-    // Collapse the table after selection to show clean view
+    // Collapse the table after selection
     this.showExamGroupManager = false;
     
-    this.cdr.detectChanges();
+    Swal.close();
     
-    this.showToast('Group Selected', `"${group.name}" is now active`);
-    this.cookieService.set('lastSelectedExamGroup', JSON.stringify(group), 1);
+    // Show success message
+    Swal.fire({
+      title: '✅ Schedule Loaded!',
+      html: `
+        <div style="text-align: left; padding: 15px;">
+          <p><strong>Group:</strong> ${group.name}</p>
+          <p><strong>Term:</strong> ${this.getTermYearLabel(group.termYear || '')}</p>
+          <p><strong>Exams:</strong> ${this.generatedSchedule.length}</p>
+          <br>
+          <p style="color: #10b981;">✓ Schedule loaded successfully</p>
+        </div>
+      `,
+      type: 'success',
+      confirmButtonText: 'View Schedule',
+      confirmButtonColor: '#10b981'
+    }).then(() => {
+      // Navigate to generated schedule view
+      this.currentStep = 'generate';
+      this.cdr.detectChanges();
+    });
+    
+    console.log('✅ Schedule loaded successfully');
+    
+  } catch (error) {
+    console.error('❌ Error loading schedule:', error);
+    Swal.close();
+    Swal.fire({
+      title: 'Load Failed',
+      text: 'Could not load the saved schedule. The data may be corrupted.',
+      type: 'error',
+      confirmButtonText: 'OK'
+    });
   }
+}
 
+// Prepare for regeneration (clear old data and load fresh)
+private prepareForRegeneration(group: ExamGroup) {
+  console.log('🔄 Preparing for regeneration');
+  
+  Swal.fire({
+    title: 'Confirm Re-generation',
+    html: `
+      <div style="text-align: left; padding: 15px;">
+        <p style="margin-bottom: 15px;">
+          This will <strong>replace</strong> the currently saved schedule for <strong>"${group.name}"</strong>.
+        </p>
+        
+        <div style="background: #fef3c7; padding: 12px; border-radius: 8px; border-left: 4px solid #f59e0b;">
+          <p style="margin: 0; color: #92400e; font-size: 14px;">
+            ⚠️ The old schedule will be permanently replaced once you generate and save a new one.
+          </p>
+        </div>
+      </div>
+    `,
+    type: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Yes, Re-generate',
+    cancelButtonText: 'Cancel',
+    confirmButtonColor: '#f59e0b'
+  }).then((result) => {
+    if (result.value) {
+      // Proceed with normal group selection (will load fresh data from API)
+      this.proceedWithGroupSelection(group);
+      
+      this.showToast(
+        'Ready to Re-generate',
+        'Click "Generate Schedule" to create a new schedule',
+        'success'
+      );
+    }
+  });
+}
+
+// Proceed with normal group selection (existing logic)
+private proceedWithGroupSelection(group: ExamGroup) {
+  console.log('✅ Proceeding with group selection:', group.name);
+  
+  this.selectedExamGroup = group;
+  this.sharedData.setSelectedExamGroup(group);
+  this.sharedData.setExamDates(group.days);
+  
+  if (group.termYear) {
+    this.activeTerm = group.termYear;
+    this.sharedData.setActiveTerm(group.termYear);
+    this.activeConfigLabel = this.getTermYearLabel(group.termYear);
+  }
+  
+  this.syncExamDatesFromGroup(group);
+  
+  // Automatically load exam data when group is selected
+  this.loadExamDataWhenGroupSelected();
+  
+  // Collapse the table after selection to show clean view
+  this.showExamGroupManager = false;
+  
+  this.cdr.detectChanges();
+  
+  this.showToast('Group Selected', `"${group.name}" is now active`);
+  this.cookieService.set('lastSelectedExamGroup', JSON.stringify(group), 1);
+}
 
 loadExamDataWhenGroupSelected() {
   if (!this.activeTerm) {
@@ -743,6 +945,13 @@ loadExamDataWhenGroupSelected() {
     
     console.log('✅ Synced exam dates:', this.examDates);
   }
+
+  // Check if a saved schedule exists for this group
+private hasScheduleForGroup(groupName: string, termYear: string): boolean {
+  const key = `examSchedule_${groupName}_${termYear}`;
+  const schedule = localStorage.getItem(key);
+  return !!schedule;
+}
 
 // Edit exam group
 editGroup(group: ExamGroup) {
@@ -1317,6 +1526,444 @@ hasRecommendedRooms(exam: ScheduledExam): boolean {
     this.getRoomRecommendation(exam, room) !== ''
   );
 }
+
+
+// Enhanced save method with proper feedback
+saveScheduleToLocalStorage() {
+  console.log('💾 Saving schedule to local storage...');
+  
+  // Validation
+  if (!this.generatedSchedule || this.generatedSchedule.length === 0) {
+    this.showToast('Error', 'No schedule to save', 'destructive');
+    return;
+  }
+  
+  if (!this.selectedExamGroup) {
+    this.showToast('Error', 'No exam group selected', 'destructive');
+    return;
+  }
+
+  this.isSaving = true;
+
+  try {
+    // ✅ OPTIMIZED: Only save ESSENTIAL data (not raw API responses)
+    const saveData = {
+      // Metadata
+      savedAt: new Date().toISOString(),
+      version: '1.0',
+      examGroup: {
+        name: this.selectedExamGroup.name,
+        termYear: this.selectedExamGroup.termYear,
+        days: this.selectedExamGroup.days
+      },
+      
+      // Configuration (minimal)
+      configuration: {
+        activeTerm: this.activeTerm,
+        numberOfDays: this.numberOfDays,
+        examDates: this.examDates,
+        timeSlots: this.timeSlots,
+        days: this.days
+      },
+      
+      // ✅ CRITICAL: Only save generated schedule (NOT raw exams array)
+      schedule: {
+        generatedSchedule: this.generatedSchedule,
+        rooms: this.rooms,
+        usedRoomsPerSlot: this.convertSetMapToObject(this.usedRoomsPerSlot)
+      },
+      
+      // Statistics only (no full data)
+      statistics: {
+        totalScheduled: this.generatedSchedule.length,
+        unscheduledCount: this.unscheduledExams ? this.unscheduledExams.length : 0,
+        totalRooms: this.rooms.length,
+        examDays: this.days.length
+      }
+    };
+
+    // ✅ Check size BEFORE saving
+    const dataString = JSON.stringify(saveData);
+    const sizeInBytes = new Blob([dataString]).size;
+    const sizeInKB = Math.round(sizeInBytes / 1024);
+    const sizeInMB = (sizeInBytes / (1024 * 1024)).toFixed(2);
+    
+    console.log(`📊 Save data size: ${sizeInKB} KB (${sizeInMB} MB)`);
+    
+    // ✅ Warn if approaching 5MB limit
+    if (sizeInBytes > 4 * 1024 * 1024) { // 4MB
+      console.warn('⚠️ Data size is large, may exceed quota');
+    }
+    
+    // ✅ If too large, offer compressed save
+    if (sizeInBytes > 5 * 1024 * 1024) { // 5MB
+      this.offerCompressedSave(saveData);
+      return;
+    }
+
+    // Save to local storage with group-specific key
+    const storageKey = `examSchedule_${this.selectedExamGroup.name}_${this.activeTerm}`;
+    
+    try {
+      localStorage.setItem(storageKey, dataString);
+      
+      // Also save as "latest" for quick access
+      localStorage.setItem('examScheduleData', dataString);
+      
+      // Update last saved time
+      this.lastSavedTime = new Date();
+      localStorage.setItem('lastSavedTime', this.lastSavedTime.toISOString());
+      
+      this.isSaving = false;
+      
+      // Show success message
+      Swal.fire({
+        title: '✅ Schedule Saved!',
+        html: `
+          <div style="text-align: left; padding: 15px;">
+            <p style="margin-bottom: 15px;"><strong>Your exam schedule has been saved successfully.</strong></p>
+            
+            <div style="background: #f3f4f6; padding: 12px; border-radius: 8px; margin-bottom: 15px;">
+              <p style="margin: 0;"><strong>Save Details:</strong></p>
+              <ul style="margin: 8px 0; padding-left: 20px; font-size: 14px;">
+                <li>Exam Group: <strong>${this.selectedExamGroup.name}</strong></li>
+                <li>Term: <strong>${this.getTermYearLabel(this.activeTerm)}</strong></li>
+                <li>Scheduled Exams: <strong>${this.generatedSchedule.length}</strong></li>
+                <li>Data Size: <strong>${sizeInKB} KB</strong></li>
+                <li>Saved at: <strong>${new Date().toLocaleString()}</strong></li>
+              </ul>
+            </div>
+          </div>
+        `,
+        type: 'success',
+        confirmButtonText: 'OK',
+        confirmButtonColor: '#10b981'
+      });
+      
+      console.log('✅ Schedule saved successfully');
+      
+    } catch (storageError) {
+      // ✅ Handle quota exceeded error
+      if (storageError.name === 'QuotaExceededError' || 
+          storageError.code === 22 || 
+          storageError.code === 1014) {
+        this.handleQuotaExceeded(saveData, sizeInKB);
+      } else {
+        throw storageError; // Re-throw other errors
+      }
+    }
+    
+  } catch (error) {
+    console.error('❌ Error saving schedule:', error);
+    this.isSaving = false;
+    
+    Swal.fire({
+      title: 'Save Failed',
+      html: `
+        <div style="text-align: left; padding: 15px;">
+          <p>Could not save the schedule to local storage.</p>
+          <p style="margin-top: 10px; color: #ef4444; font-size: 14px;">
+            <strong>Error:</strong> ${error.message || 'Unknown error'}
+          </p>
+        </div>
+      `,
+      type: 'error',
+      confirmButtonText: 'OK'
+    });
+  }
+}
+
+
+private handleQuotaExceeded(saveData: any, sizeInKB: number) {
+  console.error('❌ Storage quota exceeded');
+  
+  Swal.fire({
+    title: '💾 Storage Quota Exceeded',
+    html: `
+      <div style="text-align: left; padding: 15px;">
+        <p style="margin-bottom: 15px;">
+          <strong>Your schedule is too large to save (${sizeInKB} KB).</strong>
+        </p>
+        
+        <div style="background: #fef3c7; padding: 12px; border-radius: 8px; border-left: 4px solid #f59e0b; margin-bottom: 15px;">
+          <p style="margin: 0; color: #92400e; font-size: 14px;">
+            <strong>Browser storage limit reached.</strong> Local storage is typically limited to 5-10MB.
+          </p>
+        </div>
+        
+        <p style="margin-bottom: 10px;"><strong>Options:</strong></p>
+        <ul style="margin: 0; padding-left: 20px; font-size: 14px;">
+          <li style="margin-bottom: 8px;">
+            <strong>Clear old schedules</strong> to free up space
+          </li>
+          <li style="margin-bottom: 8px;">
+            <strong>Download as file</strong> instead (recommended)
+          </li>
+          <li>
+            <strong>Reduce schedule size</strong> by removing unscheduled exams
+          </li>
+        </ul>
+      </div>
+    `,
+    type: 'warning',
+    showCancelButton: true,
+    confirmButtonText: '📥 Download as File',
+    cancelButtonText: '🗑️ Clear Old & Retry',
+    confirmButtonColor: '#3b82f6',
+    cancelButtonColor: '#f59e0b'
+  }).then((result) => {
+    if (result.value) {
+      // User clicked "Download as File"
+      this.downloadScheduleAsFile(saveData);
+    } else if (result.dismiss === Swal.DismissReason.cancel) {
+      // User clicked "Clear Old & Retry"
+      this.clearOldSchedulesAndRetry(saveData);
+    }
+  });
+}
+
+
+saveCurrentSchedule() {
+  if (!this.selectedExamGroup) {
+    this.showToast('Error', 'No exam group selected', 'destructive');
+    return;
+  }
+
+  if (!this.activeTerm) {
+    this.showToast('Error', 'No term selected', 'destructive');
+    return;
+  }
+
+  if (this.generatedSchedule.length === 0) {
+    this.showToast('Error', 'No schedule to save', 'destructive');
+    return;
+  }
+
+  // Save the schedule
+  this.saveScheduleForGroup(this.selectedExamGroup.name, this.activeTerm);
+  
+  // Also save to shared data service for student mapping
+  if (this.selectedExamGroup && this.activeTerm) {
+    this.sharedData.setStudentMappingForGroup(
+      this.selectedExamGroup.name,
+      this.activeTerm,
+      this.convertScheduleToMappingFormat()
+    );
+  }
+
+  // ✅ ANGULAR 8 COMPATIBLE: Use type instead of icon
+  Swal.fire({
+    title: ' Schedule Saved!',
+    html: `
+      <div style="text-align: left; padding: 15px;">
+        <p><strong>Exam Group:</strong> ${this.selectedExamGroup.name}</p>
+        <p><strong>Term:</strong> ${this.getTermYearLabel(this.activeTerm)}</p>
+        <p><strong>Exams Saved:</strong> ${this.generatedSchedule.length}</p>
+        <br>
+        <p style="color: #10b981;"> This schedule is now saved to localStorage</p>
+        <p style="color: #666; font-size: 14px;">Next time you select this exam group, you can load this schedule directly!</p>
+      </div>
+    `,
+    type: 'success',  // ✅ Angular 8 uses 'type'
+    confirmButtonText: 'OK',
+    confirmButtonColor: '#10b981'
+  });
+
+  console.log('✅ Schedule saved:', {
+    group: this.selectedExamGroup.name,
+    term: this.activeTerm,
+    exams: this.generatedSchedule.length,
+    key: `schedule_${this.selectedExamGroup.name}_${this.activeTerm}`
+  });
+}
+
+
+  private convertScheduleToMappingFormat(): any[] {
+    return this.examDates.map(date => ({
+      date,
+      programs: Array.from(
+        this.generatedSchedule
+          .filter(e => e.DAY === this.days[this.examDates.indexOf(date)])
+          .reduce((map, exam) => {
+            const key = `${exam.COURSE}_${exam.YEAR_LEVEL}`;
+            if (!map.has(key)) {
+              map.set(key, {
+                program: exam.COURSE,
+                year: exam.YEAR_LEVEL,
+                subjects: []
+              });
+            }
+            map.get(key).subjects.push({
+              subjectId: exam.SUBJECT_ID,
+              subjectTitle: exam.DESCRIPTIVE_TITLE,
+              codeNo: exam.CODE,
+              sched: exam.SLOT
+            });
+            return map;
+          }, new Map()).values()
+      )
+    }));
+  }
+
+ private saveScheduleForGroup(groupName: string, termYear: string) {
+    const key = `schedule_${groupName}_${termYear}`;
+    const scheduleData = {
+      generatedSchedule: this.generatedSchedule,
+      exams: this.exams,
+      rooms: this.rooms,
+      roomCapacities: Array.from(this.roomCapacities.entries()),
+      examDates: this.examDates,
+      subjectTypes: Array.from(this.subjectTypes.entries()),
+      timestamp: new Date().toISOString()
+    };
+    localStorage.setItem(key, JSON.stringify(scheduleData));
+  }
+
+private offerCompressedSave(saveData: any) {
+  Swal.fire({
+    title: '💾 Data Too Large',
+    html: `
+      <div style="text-align: left; padding: 15px;">
+        <p style="margin-bottom: 15px;">
+          <strong>Your schedule exceeds the storage limit.</strong>
+        </p>
+        
+        <p style="margin-bottom: 10px;"><strong>Options:</strong></p>
+        <ul style="margin: 0; padding-left: 20px; font-size: 14px;">
+          <li style="margin-bottom: 8px;">
+            <strong>Download as file</strong> (recommended)
+          </li>
+          <li>
+            <strong>Clear old schedules</strong> to free up space
+          </li>
+        </ul>
+      </div>
+    `,
+    type: 'warning',
+    showCancelButton: true,
+    confirmButtonText: '📥 Download as File',
+    cancelButtonText: 'Cancel',
+    confirmButtonColor: '#3b82f6'
+  }).then((result) => {
+    if (result.value) {
+      this.downloadScheduleAsFile(saveData);
+    }
+  });
+}
+
+private clearOldSchedulesAndRetry(saveData: any) {
+  let cleared = 0;
+  
+  // Find and remove old exam schedules
+  const keysToRemove: string[] = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && key.startsWith('examSchedule_') && key !== `examSchedule_${this.selectedExamGroup.name}_${this.activeTerm}`) {
+      keysToRemove.push(key);
+    }
+  }
+  
+  keysToRemove.forEach(key => {
+    localStorage.removeItem(key);
+    cleared++;
+  });
+  
+  if (cleared > 0) {
+    console.log(`🗑️ Cleared ${cleared} old schedule(s)`);
+    
+    // Retry save
+    try {
+      const dataString = JSON.stringify(saveData);
+      const storageKey = `examSchedule_${this.selectedExamGroup.name}_${this.activeTerm}`;
+      
+      localStorage.setItem(storageKey, dataString);
+      localStorage.setItem('examScheduleData', dataString);
+      
+      this.lastSavedTime = new Date();
+      localStorage.setItem('lastSavedTime', this.lastSavedTime.toISOString());
+      
+      Swal.fire({
+        title: '✅ Saved!',
+        html: `
+          <p>Cleared ${cleared} old schedule(s) and saved successfully.</p>
+        `,
+        type: 'success',
+        timer: 2000
+      });
+      
+    } catch (retryError) {
+      Swal.fire({
+        title: 'Still Too Large',
+        text: 'Schedule is too large even after clearing old data. Please download as file instead.',
+        type: 'error'
+      });
+    }
+  } else {
+    Swal.fire({
+      title: 'No Old Schedules',
+      text: 'No old schedules found to clear. Please download as file instead.',
+      type: 'info'
+    });
+  }
+}
+
+private checkStorageSpace(): { used: number; available: number; percentage: number } {
+  let totalSize = 0;
+  
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key) {
+      const item = localStorage.getItem(key);
+      if (item) {
+        totalSize += key.length + item.length;
+      }
+    }
+  }
+  
+  const usedMB = totalSize / (1024 * 1024);
+  const limitMB = 5; // Typical limit
+  const percentage = (usedMB / limitMB) * 100;
+  
+  return {
+    used: Math.round(usedMB * 100) / 100,
+    available: Math.round((limitMB - usedMB) * 100) / 100,
+    percentage: Math.round(percentage)
+  };
+}
+
+private downloadScheduleAsFile(saveData: any) {
+  try {
+    const dataStr = JSON.stringify(saveData, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = window.URL.createObjectURL(blob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `exam-schedule-${this.selectedExamGroup.name}-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+    
+    this.showToast('Downloaded', 'Schedule saved as file', 'success');
+    console.log('✅ Schedule downloaded as file');
+    
+  } catch (error) {
+    console.error('Error downloading file:', error);
+    this.showToast('Error', 'Could not download file', 'destructive');
+  }
+}
+
+
+// Helper method to convert Set Map to plain object for JSON serialization
+private convertSetMapToObject(setMap: { [key: string]: Set<string> }): { [key: string]: string[] } {
+  const obj: { [key: string]: string[] } = {};
+  Object.keys(setMap).forEach(key => {
+    obj[key] = Array.from(setMap[key]);
+  });
+  return obj;
+}
+
 
 getFreeRoomForSlot(exam: Exam, day: string, slot: string, roomsList: string[]): string {
   const key = `${day}_${slot}`;
@@ -2557,32 +3204,174 @@ moveExam(exam: ScheduledExam, newDay: string, newSlot: string) {
     this.global.swalSuccess("Schedule saved to local storage!");
   }
 
-  loadFromLocalStorage() {
-    const saved = localStorage.getItem('examScheduleData');
-    if (!saved) {
-      this.global.swalAlertError("No saved schedule found.");
-      return;
+loadFromLocalStorage() {
+  const saved = localStorage.getItem('examScheduleData');
+  if (!saved) {
+    Swal.fire({
+      title: 'No Saved Schedule',
+      text: 'No saved schedule found in local storage.',
+      type: 'info',
+      confirmButtonText: 'OK'
+    });
+    return;
+  }
+
+  try {
+    const parsed = JSON.parse(saved);
+    
+    // Extract values safely for Angular 8
+    const examGroupName = parsed.examGroup && parsed.examGroup.name ? parsed.examGroup.name : 'Unknown';
+    const activeTerm = parsed.configuration && parsed.configuration.activeTerm ? parsed.configuration.activeTerm : '';
+    const scheduleLength = parsed.schedule && parsed.schedule.generatedSchedule ? parsed.schedule.generatedSchedule.length : 0;
+    const savedAt = parsed.savedAt ? new Date(parsed.savedAt).toLocaleString() : 'Unknown';
+    
+    // Show confirmation dialog with details
+    Swal.fire({
+      title: 'Load Saved Schedule?',
+      html: `
+        <div style="text-align: left; padding: 15px;">
+          <p style="margin-bottom: 15px;">Found a saved schedule:</p>
+          
+          <div style="background: #f3f4f6; padding: 12px; border-radius: 8px;">
+            <ul style="margin: 0; padding-left: 20px; font-size: 14px;">
+              <li>Exam Group: <strong>${examGroupName}</strong></li>
+              <li>Term: <strong>${this.getTermYearLabel(activeTerm)}</strong></li>
+              <li>Scheduled Exams: <strong>${scheduleLength}</strong></li>
+              <li>Saved: <strong>${savedAt}</strong></li>
+            </ul>
+          </div>
+          
+          <p style="margin-top: 15px; color: #ef4444; font-size: 13px;">
+            ⚠️ This will replace your current schedule (if any).
+          </p>
+        </div>
+      `,
+      type: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, load it',
+      cancelButtonText: 'Cancel',
+      confirmButtonColor: '#3b82f6'
+    }).then((result) => {
+      if (result.value) {
+        this.loadScheduleData(parsed);
+      }
+    });
+    
+  } catch (err) {
+    console.error("Error loading saved schedule:", err);
+    Swal.fire({
+      title: 'Load Failed',
+      text: 'Could not load the saved schedule. The data may be corrupted.',
+      type: 'error',
+      confirmButtonText: 'OK'
+    });
+  }
+}
+
+
+private loadScheduleData(data: any) {
+  try {
+    console.log('Loading schedule data from saved file...');
+    
+    // Load configuration with safe null checks
+    this.activeTerm = data.configuration && data.configuration.activeTerm ? data.configuration.activeTerm : '';
+    this.examDates = data.configuration && data.configuration.examDates ? data.configuration.examDates : [''];
+    this.numberOfDays = data.configuration && data.configuration.numberOfDays ? data.configuration.numberOfDays : 3;
+    
+    // Load schedule data with safe null checks
+    // this.exams = data.schedule && data.schedule.exams ? data.schedule.exams : [];
+    this.rooms = data.schedule && data.schedule.rooms ? data.schedule.rooms : [];
+    this.generatedSchedule = data.schedule && data.schedule.generatedSchedule ? data.schedule.generatedSchedule : [];
+    // this.unscheduledExams = data.schedule && data.schedule.unscheduledExams ? data.schedule.unscheduledExams : [];
+    
+    // Restore usedRoomsPerSlot (convert arrays back to Sets)
+    this.usedRoomsPerSlot = {};
+    if (data.schedule && data.schedule.usedRoomsPerSlot) {
+      Object.keys(data.schedule.usedRoomsPerSlot).forEach(key => {
+        this.usedRoomsPerSlot[key] = new Set(data.schedule.usedRoomsPerSlot[key]);
+      });
     }
+    
+    // Load exam group
+    if (data.examGroup) {
+      this.selectedExamGroup = data.examGroup;
+      this.sharedData.setSelectedExamGroup(data.examGroup);
+      this.sharedData.setExamDates(data.examGroup.days);
+    }
+    
+    // Update UI
+    this.updateDaysArray();
+    this.generateCourseGridData();
+    this.detectProctorConflicts();
+    
+    console.log('✅ Schedule data loaded successfully');
+    
+  } catch (error) {
+    console.error('Error loading schedule data:', error);
+    throw error;
+  }
+}
 
-    try {
-      const parsed = JSON.parse(saved);
-      this.activeTerm = parsed.activeTerm || '';
-      this.exams = parsed.exams || [];
-      this.rooms = parsed.rooms || [];
-      this.generatedSchedule = parsed.generatedSchedule || [];
-      this.examDates = parsed.examDates || [''];
-      this.numberOfDays = parsed.numberOfDays || 3;
-      this.currentStep = parsed.currentStep || 'import';
 
-      this.updateDaysArray();
-      this.detectProctorConflicts();
-      this.cdr.markForCheck();
-      this.global.swalSuccess("Schedule loaded successfully!");
-    } catch (err) {
-      console.error("Error loading saved schedule:", err);
-      this.global.swalAlertError("Failed to load saved schedule.");
+// Add this method to view all saved schedules
+viewSavedSchedules() {
+  const schedules: any[] = [];
+  
+  // Scan local storage for saved schedules
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && key.startsWith('examSchedule_')) {
+      try {
+        const data = JSON.parse(localStorage.getItem(key) || '{}');
+        
+        // Safe property access for Angular 8
+        const examGroupName = data.examGroup && data.examGroup.name ? data.examGroup.name : 'Unknown';
+        const activeTerm = data.configuration && data.configuration.activeTerm ? data.configuration.activeTerm : '';
+        const scheduleLength = data.schedule && data.schedule.generatedSchedule && data.schedule.generatedSchedule.length ? data.schedule.generatedSchedule.length : 0;
+        
+        schedules.push({
+          key: key,
+          name: examGroupName,
+          term: activeTerm,
+          savedAt: data.savedAt,
+          examCount: scheduleLength
+        });
+      } catch (e) {
+        console.error('Error parsing saved schedule:', e);
+      }
     }
   }
+  
+  if (schedules.length === 0) {
+    this.showToast('No Saved Schedules', 'No saved schedules found', 'info');
+    return;
+  }
+  
+  // Sort by date (newest first)
+  schedules.sort((a, b) => new Date(b.savedAt).getTime() - new Date(a.savedAt).getTime());
+  
+  // Build HTML list
+  const schedulesHtml = schedules.map(s => `
+    <div style="background: #f3f4f6; padding: 12px; border-radius: 8px; margin-bottom: 10px; text-align: left;">
+      <p style="margin: 0; font-weight: 600;">${s.name}</p>
+      <p style="margin: 5px 0 0 0; font-size: 13px; color: #6b7280;">
+        ${this.getTermYearLabel(s.term)} | ${s.examCount} exams | 
+        Saved: ${new Date(s.savedAt).toLocaleString()}
+      </p>
+    </div>
+  `).join('');
+  
+  Swal.fire({
+    title: 'Saved Schedules',
+    html: `
+      <div style="max-height: 400px; overflow-y: auto; padding: 10px;">
+        ${schedulesHtml}
+      </div>
+    `,
+    confirmButtonText: 'Close',
+    width: '600px'
+  });
+}
 
   hasExamsForYear(course: string, year: number, day: string): boolean {
     if (!this.courseGridData.grid || !this.courseGridData.grid[day] || !this.courseGridData.grid[day][course]) {
@@ -3667,15 +4456,15 @@ generateExamSchedule() {
     );
   }
 
-  // ============================================
-  // PHASE 5: FINALIZATION & VALIDATION
-  // ============================================
-  
-  this.generatedSchedule = schedule;
-  this.validateScheduleConstraints(schedule);
-  this.detectScheduleConflicts();
+ // ============================================
+// PHASE 5: FINALIZATION & VALIDATION
+// ============================================
 
-  const archValid = this.validateArchBuildingAssignments();
+this.generatedSchedule = schedule;
+this.validateScheduleConstraints(schedule);
+this.detectScheduleConflicts();
+
+const archValid = this.validateArchBuildingAssignments();
 if (!archValid) {
   Swal.close();
   Swal.fire({
@@ -3692,59 +4481,54 @@ if (!archValid) {
     type: 'error',
     confirmButtonText: 'OK'
   });
-  return; // Stop here if violation detected
+  return;
 }
 
 console.log('\n📊 FINAL DISTRIBUTION:');
+this.days.forEach(function(day) {
+  const count = schedule.filter(function(s) { return s.DAY === day; }).length;
+  const percentage = ((count / schedule.length) * 100).toFixed(1);
+  console.log('  ' + day + ': ' + count + ' exam slots (' + percentage + '%)');
+});
 
-  console.log('\n📊 FINAL DISTRIBUTION:');
-  this.days.forEach(function(day) {
-    const count = schedule.filter(function(s) { return s.DAY === day; }).length;
-    const percentage = ((count / schedule.length) * 100).toFixed(1);
-    console.log('  ' + day + ': ' + count + ' exam slots (' + percentage + '%)');
+this.unscheduledExams = eligibleExams.filter(function(e) {
+  return !this.generatedSchedule.some(function(s) {
+    return (s.CODE || '').toUpperCase() === (e.code || '').toUpperCase();
   });
-  
+}.bind(this));
 
+console.log('\n📋 SCHEDULING RESULTS:');
+console.log('  ✅ Successfully scheduled: ' + (eligibleExams.length - this.unscheduledExams.length) + ' exams');
+console.log('  ❌ Unscheduled: ' + this.unscheduledExams.length + ' exams');
 
-  this.unscheduledExams = eligibleExams.filter(function(e) {
-    return !this.generatedSchedule.some(function(s) {
-      return (s.CODE || '').toUpperCase() === (e.code || '').toUpperCase();
-    });
-  }.bind(this));
+this.detectProctorConflicts();
 
-  console.log('\n📋 SCHEDULING RESULTS:');
-  console.log('  ✅ Successfully scheduled: ' + (eligibleExams.length - this.unscheduledExams.length) + ' exams');
-  console.log('  ❌ Unscheduled: ' + this.unscheduledExams.length + ' exams');
-  
-  this.detectProctorConflicts();
-  
-  Swal.close();
+// ✅ CRITICAL: Close loading dialog FIRST
+Swal.close();
+
+// ✅ Small delay to ensure clean transition
+setTimeout(() => {
   this.currentStep = 'generate';
   
   const coveragePercent = ((eligibleExams.length - this.unscheduledExams.length) / eligibleExams.length * 100).toFixed(1);
-  const successMessage = '<div style="text-align: left; padding: 15px;">' +
-    '<p style="margin-bottom: 15px;"><strong>Schedule Generated Successfully!</strong></p>' +
-    '<ul style="margin: 10px 0; padding-left: 20px;">' +
-    '<li><strong>Total Scheduled:</strong> ' + schedule.length + ' exam slots</li>' +
-    '<li><strong>Unique Exams:</strong> ' + (eligibleExams.length - this.unscheduledExams.length) + ' / ' + eligibleExams.length + '</li>' +
-    '<li><strong>Coverage:</strong> ' + coveragePercent + '%</li>' +
-    '<li><strong>Days Used:</strong> ' + this.days.length + '</li>' +
-    '</ul>' +
-    (this.unscheduledExams.length > 0 ? 
-      '<p style="margin-top: 15px; color: #f59e0b;">⚠️ ' + this.unscheduledExams.length + ' exam(s) could not be scheduled.</p>' 
-      : '<p style="margin-top: 15px; color: #10b981;">100% scheduling coverage achieved!</p>') +
-    '</div>';
   
+  
+  // ✅ SHOW SUCCESS DIALOG WITHOUT LOADING
   Swal.fire({
     title: 'Schedule Generated!',
-    html: successMessage,
+
     type: this.unscheduledExams.length === 0 ? 'success' : 'warning',
     confirmButtonText: 'View Schedule',
-    confirmButtonColor: '#10b981'
+    confirmButtonColor: '#10b981',
+    allowOutsideClick: true,
+    showCloseButton: true,
+    showLoaderOnConfirm: false, // ✅ KEY: Prevent loader on button
+    allowEnterKey: true
   });
   
   this.autoSaveToLocalStorage();
   this.cdr.detectChanges();
+}, 150); // 150ms delay for clean transition
 }
 
 
