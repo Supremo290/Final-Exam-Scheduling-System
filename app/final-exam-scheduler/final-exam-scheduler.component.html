@@ -144,7 +144,7 @@
 
   <!-- ✅ Exam Dates Section (Only show when group is selected) -->
   <div *ngIf="selectedExamGroup" class="section">
-    <h3>📆 Exam Dates (from selected group)</h3>
+    <h3>Exam Dates (from selected group)</h3>
     
     <div style="background: #e8f5e9; padding: 15px; border-radius: 5px; margin-bottom: 15px;">
       <p style="color: #2e7d32; margin: 0; display: flex; align-items: center; gap: 10px;">
@@ -225,26 +225,25 @@
       [class.active]="currentStep === 'coursegrid'"
       (click)="viewCourseGrid()">
       <mat-icon>grid_on</mat-icon>
-      <span>Course Grid</span>
+      <span>Student Mapping</span>
     </button>
 
-    <button 
-      class="nav-btn"
-      [class.active]="currentStep === 'summary'"
-      (click)="viewCourseSummary()">
-      <mat-icon>summarize</mat-icon>
-      <span>Summary</span>
-    </button>
 
     <button 
       class="nav-btn"
       [class.active]="currentStep === 'timetable'"
       (click)="viewRoomTimeTable()">
       <mat-icon>table_chart</mat-icon>
-      <span>Time Table</span>
+      <span>Room Mapping</span>
     </button>
 
-    
+       <button 
+      class="nav-btn"
+      [class.active]="currentStep === 'summary'"
+      (click)="viewCourseSummary()">
+      <mat-icon>list_alt</mat-icon>
+      <span>Summary</span>
+    </button>
 
     <button 
       class="nav-btn"
@@ -264,7 +263,7 @@
 
     <button class="nav-btn back" (click)="goToStep('import')">
       <mat-icon>arrow_back</mat-icon>
-      <span>Import</span>
+      <span>Back</span>
     </button>
   </div>
 </div>
@@ -306,14 +305,13 @@
     </span>
   </button> -->
   
-       <button 
-          mat-raised-button 
-          color="accent"
-          (click)="saveScheduleToLocalStorage()" 
-          style="padding: 5px 10px; font-size: 16px;">
-          <mat-icon>save</mat-icon>
-          Save Schedule
-        </button>
+      <button 
+  class="btn btn-primary"
+  (click)="saveScheduleToLocalStorage()" 
+  style="padding: 10px 20px; font-size: 14px; display: inline-flex; align-items: center; gap: 8px;">
+  <mat-icon style="font-size: 18px; width: 18px; height: 18px;">save</mat-icon>
+  Save Schedule
+</button>
 
   <button class="btn btn-outline" (click)="downloadScheduleCSV()">
               Download CSV
@@ -806,7 +804,7 @@
 
       <!-- NEW: Search Bar -->
       <mat-form-field appearance="outline" class="search-field">
-        <mat-label>🔍 Search exams...</mat-label>
+        <mat-label>Search exams...</mat-label>
         <input 
           matInput 
           [(ngModel)]="searchQuery" 
@@ -955,7 +953,7 @@
 <!-- STEP 5: COURSE GRID - COMPLETELY FIXED -->
 <div *ngIf="currentStep === 'coursegrid'" class="card">
   <div class="card-header">
-    <h2>Course Grid Editor</h2>
+    <h2>Student Mapping</h2>
     <!-- <button class="btnback" (click)="goToStep('summary')">⬅ Back</button> -->
   
 
@@ -1019,7 +1017,7 @@
     </div>
 
     <mat-form-field appearance="outline" class="search-field">
-      <mat-label>🔍 Search exams...</mat-label>
+      <mat-label>Search exams...</mat-label>
       <input 
         matInput 
         [(ngModel)]="searchQuery" 
@@ -1095,7 +1093,7 @@
                     
                     <div class="exam-card-header">
                       <div class="exam-header-left">
-                        <mat-icon class="subject-icon">book</mat-icon>
+                      
                         <div class="subject-info">
                           <strong class="subject-id">{{ exam.SUBJECT_ID || exam.subjectId }}</strong>
                           
@@ -1110,24 +1108,24 @@
 
                     <div class="exam-card-body">
                       <div class="exam-detail">
-                        <mat-icon class="detail-icon">meeting_room</mat-icon>
+                 
                         <span>Room {{ exam.ROOM || exam.room }}</span>
                       </div>
                       <div class="exam-detail">
-                        <mat-icon class="detail-icon">badge</mat-icon>
+                       
                         <span>{{ exam.CODE || exam.code }}</span>
                       </div>
                     </div>
 
                     <div class="exam-card-actions">
-                      <button class="btn-icon-sm" [title]="'Move ' + exam.title" (click)="showMoveOptions(getFullExam(exam, activeDay, slot), activeDay, slot)">📍</button>
-                  <!-- <button class="btn-icon-sm" [title]="'Remove ' + exam.title" (click)="removeExamByTitle(exam.title)">🗑️</button> -->
+                      <button class="btn-icon-sm" [title]="'Move ' + exam.title" (click)="showMoveOptions(getFullExam(exam, activeDay, slot), activeDay, slot)"><mat-icon style="font-size: 16px; width: 16px; height: 16px;">edit</mat-icon></button>
+                  <!-- <button class="btn-icon-sm" [title]="'Remove ' + exam.title" (click)="removeExamByTitle(exam.title)"></button> -->
                 
                 <button *ngIf="!exam.IS_MULTI_SLOT || exam.SLOT_INDEX === 0"
             class="btn-icon-sm" 
             [title]="'Remove ' + exam.DESCRIPTIVE_TITLE" 
             (click)="removeExamByCode(exam.CODE)">
-      🗑️
+      ✖
     </button>
                 </div>
                   </div>

@@ -668,7 +668,7 @@ selectExamGroup(group: ExamGroup) {
           
           <div style="background: #dbeafe; padding: 12px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #3b82f6;">
             <p style="margin: 0; color: #1e40af; font-size: 14px;">
-              <strong>📋 Term:</strong> ${this.getTermYearLabel(group.termYear || '')}
+              <strong>Term:</strong> ${this.getTermYearLabel(group.termYear || '')}
             </p>
           </div>
           
@@ -686,15 +686,15 @@ selectExamGroup(group: ExamGroup) {
       type: 'question',
       showCancelButton: true,
       showCloseButton: true,
-      confirmButtonText: '👁️ View Schedule',
-      cancelButtonText: '🔄 Re-generate',
+      confirmButtonText: 'View Schedule',
+      cancelButtonText: 'Re-generate',
       confirmButtonColor: '#10b981',
       cancelButtonColor: '#f59e0b',
       allowOutsideClick: false
     }).then((result) => {
       if (result.value) {
         // User chose "View Schedule"
-        console.log('📋 User chose to view saved schedule');
+        console.log('User chose to view saved schedule');
         this.loadScheduleForGroup(group);
       } else if (result.dismiss === Swal.DismissReason.cancel) {
         // User chose "Re-generate"
@@ -766,27 +766,30 @@ private loadScheduleForGroup(group: ExamGroup) {
     Swal.close();
     
     // Show success message
-    Swal.fire({
-      title: '✅ Schedule Loaded!',
-      html: `
-        <div style="text-align: left; padding: 15px;">
-          <p><strong>Group:</strong> ${group.name}</p>
-          <p><strong>Term:</strong> ${this.getTermYearLabel(group.termYear || '')}</p>
-          <p><strong>Exams:</strong> ${this.generatedSchedule.length}</p>
-          <br>
-          <p style="color: #10b981;">✓ Schedule loaded successfully</p>
-        </div>
-      `,
-      type: 'success',
-      confirmButtonText: 'View Schedule',
-      confirmButtonColor: '#10b981'
-    }).then(() => {
-      // Navigate to generated schedule view
-      this.currentStep = 'generate';
-      this.cdr.detectChanges();
-    });
+   Swal.fire({
+  title: 'Schedule Loaded!',
+  html: `
+    <div style="text-align: left; padding: 15px;">
+      <p><strong>Group:</strong> ${group.name}</p>
+      <p><strong>Term:</strong> ${this.getTermYearLabel(group.termYear || '')}</p>
+      <p><strong>Exams:</strong> ${this.generatedSchedule.length}</p>
+      <br>
+      <p style="color: #10b981;">✓ Schedule loaded successfully</p>
+    </div>
+  `,
+  type: 'success',
+  confirmButtonText: 'View Schedule',
+  confirmButtonColor: '#10b981',
+  showLoaderOnConfirm: false, // ✅ ADD THIS LINE
+  allowOutsideClick: true,
+  showCloseButton: true
+}).then(() => {
+  // Navigate to generated schedule view
+  this.currentStep = 'generate';
+  this.cdr.detectChanges();
+});
     
-    console.log('✅ Schedule loaded successfully');
+    console.log('Schedule loaded successfully');
     
   } catch (error) {
     console.error('❌ Error loading schedule:', error);
@@ -910,11 +913,7 @@ loadExamDataWhenGroupSelected() {
         console.log(`✅ Loaded ${this.exams.length} exams from API`);
         console.log(`📍 Available rooms: ${this.rooms.length}`);
         
-        this.showToast(
-          'Data Loaded', 
-          `${this.exams.length} exams loaded successfully. Click "Generate Schedule" to proceed.`, 
-          'success'
-        );
+
         
         this.cdr.detectChanges();
       },
@@ -2680,7 +2679,7 @@ startEdit(displayIndex: number) {
     return;
   }
 
-  console.log('📋 Exam to edit:', examToEdit);
+  console.log('Exam to edit:', examToEdit);
 
   // Store the DISPLAY index (not the real index)
   // This allows us to highlight the correct row in the table
@@ -7687,7 +7686,7 @@ showTBDRoomsReport() {
     .join('');
 
   Swal.fire({
-    title: '📋 Unassigned Rooms Report',
+    title: 'Unassigned Rooms Report',
     html: `
       <div style="text-align: left; padding: 15px;">
         <p style="margin-bottom: 15px;"><strong>Total exams needing rooms: ${summary.total}</strong></p>
